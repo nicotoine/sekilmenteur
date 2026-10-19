@@ -11,7 +11,7 @@
         <Avatar name={roster.names[i]} index={i} />
         <input
           type="text"
-          class="input input-lg h-12 w-full text-base"
+          class="input input-lg h-12 w-full min-w-0 text-base"
           placeholder="Nom du joueur"
           maxlength="20"
           autocomplete="off"
