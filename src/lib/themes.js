@@ -7,7 +7,7 @@ export const themes = Object.values(modules)
 export const ALL_THEMES = 'all';
 
 export function pickEntry(themeId) {
-  const pool = themeId === ALL_THEMES ? themes.flatMap((t) => t.words) : (themes.find((t) => t.id === themeId)?.words ?? []);
+  const pool = themeId === ALL_THEMES ? themes.filter((t) => !t.adult).flatMap((t) => t.words) : (themes.find((t) => t.id === themeId)?.words ?? []);
   const entry = pool[Math.floor(Math.random() * pool.length)];
   return typeof entry === 'string' ? { word: entry, hint: '' } : entry;
 }

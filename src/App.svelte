@@ -89,7 +89,7 @@
           class="btn h-11 {game.themeId === theme.id ? 'btn-secondary' : 'btn-outline'}"
           role="radio"
           aria-checked={game.themeId === theme.id}
-          onclick={() => (game.themeId = theme.id)}>{theme.emoji ?? ''} {theme.name}</button
+          onclick={() => (game.themeId = theme.id)}>{theme.emoji ?? ''} {theme.name}{theme.adult ? ' 18+' : ''}</button
         >
       {/each}
     </div>
