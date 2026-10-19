@@ -1,7 +1,7 @@
 <script>
   import { onDestroy, untrack } from 'svelte';
 
-  let { seconds } = $props();
+  let { seconds, onEnd } = $props();
 
   const total = untrack(() => seconds);
   let endAt = Date.now() + total * 1000;
@@ -11,7 +11,10 @@
 
   function tick() {
     remaining = Math.max(0, Math.ceil((endAt - Date.now()) / 1000));
-    if (remaining === 0) stop();
+    if (remaining === 0) {
+      stop();
+      onEnd?.();
+    }
   }
   function stop() {
     clearInterval(intervalId);

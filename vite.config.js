@@ -15,9 +15,9 @@ export default defineConfig({
         globPatterns: ['**/*.{js,css,html,woff2,png,svg}'],
       },
       manifest: {
-        name: 'Sékilmenteur',
-        short_name: 'Sékilmenteur',
-        description: 'Un mot secret. Un menteur parmi vous.',
+        name: 'Jeux de soirée',
+        short_name: 'Jeux',
+        description: 'Sékilmenteur, Undercover, Tabou : des jeux de soirée sur un seul téléphone.',
         lang: 'fr',
         start_url: './',
         scope: './',
