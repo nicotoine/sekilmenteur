@@ -1,0 +1,6 @@
+{
+  "appId": "fr.sekilmenteur.app",
+  "appName": "Sékilmenteur",
+  "webDir": "dist",
+  "backgroundColor": "#0e0f1a"
+}
