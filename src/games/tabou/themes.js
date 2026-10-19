@@ -6,4 +6,10 @@ const modules = import.meta.glob('./themes/*.json', { eager: true, import: 'defa
 export const themes = loadThemes(modules, 'cards');
 export { ALL_THEMES };
 
-export const buildDeck = (themeId) => shuffle(themePool(themes, themeId, 'cards'));
+export function buildDeck(themeId) {
+  const byWord = new Map();
+  for (const card of themePool(themes, themeId, 'cards')) {
+    if (!byWord.has(card.word.toLowerCase())) byWord.set(card.word.toLowerCase(), card);
+  }
+  return shuffle([...byWord.values()]);
+}

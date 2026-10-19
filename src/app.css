@@ -127,3 +127,10 @@ h2,
     transition: none;
   }
 }
+
+/* Téléphone en paysage : on exploite toute la largeur. */
+@media (orientation: landscape) and (max-height: 520px) {
+  #app {
+    max-width: none;
+  }
+}

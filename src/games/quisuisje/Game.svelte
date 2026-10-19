@@ -75,24 +75,26 @@
   {:else if game.phase === 'countdown'}
     <Countdown from={3} onDone={() => game.startTurn()} />
   {:else if game.phase === 'turn'}
-    <div class="flex flex-1 flex-col gap-3">
-      <div class="flex justify-center">
+    <div class="flex flex-1 flex-col gap-3 landscape:flex-row landscape:items-stretch">
+      <div class="flex justify-center landscape:w-32 landscape:shrink-0 landscape:items-center">
         {#key game.turnId}
           <Timer seconds={game.turnSeconds} onEnd={() => game.endTurn()} size={6} textClass="text-2xl" pausable={false} />
         {/key}
       </div>
 
       <section
-        class="flex min-h-56 flex-1 items-center justify-center rounded-box border-4 p-5 text-center transition-colors duration-200 {flash === 'found' ? 'border-success bg-success text-success-content' : flash === 'skip' ? 'border-neutral bg-neutral' : 'border-secondary bg-base-100'}"
+        class="flex min-h-56 flex-1 items-center justify-center rounded-box border-4 p-5 text-center transition-colors duration-200 landscape:min-h-0 {flash === 'found' ? 'border-success bg-success text-success-content' : flash === 'skip' ? 'border-neutral bg-neutral' : 'border-secondary bg-base-100'}"
       >
-        <p class="font-display text-6xl font-extrabold break-words {flash ? '' : 'text-secondary'}">{game.card}</p>
+        <p class="font-display text-6xl font-extrabold break-words landscape:text-7xl {flash ? '' : 'text-secondary'}">{game.card}</p>
       </section>
 
-      <div class="grid grid-cols-3 gap-3">
-        <button class="btn btn-neutral h-16 text-lg" onclick={() => answer(false)}>Passer</button>
-        <button class="btn btn-success col-span-2 h-16 text-xl" onclick={() => answer(true)}>Trouvé</button>
+      <div class="flex flex-col gap-3 landscape:w-44 landscape:shrink-0 landscape:justify-center">
+        <div class="grid grid-cols-3 gap-3 landscape:grid-cols-1">
+          <button class="btn btn-success col-span-2 h-16 text-xl landscape:order-first landscape:col-span-1" onclick={() => answer(true)}>Trouvé</button>
+          <button class="btn btn-neutral h-16 text-lg" onclick={() => answer(false)}>Passer</button>
+        </div>
+        <button class="btn btn-ghost btn-sm" onclick={() => game.endTurn()}>Terminer le tour</button>
       </div>
-      <button class="btn btn-ghost btn-sm" onclick={() => game.endTurn()}>Terminer le tour</button>
     </div>
   {:else if game.phase === 'summary'}
     <header class="py-4 text-center">

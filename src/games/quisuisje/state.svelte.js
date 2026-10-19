@@ -48,6 +48,8 @@ class QuiSuisJe {
     this.players = roster.filled.map((name) => ({ name, score: 0 }));
     this.deck = pickWords(themes, this.themeId, DECK_SIZE);
     this.turnIndex = 0;
+    this.found = [];
+    this.passed = [];
     this.phase = 'ready';
   }
 

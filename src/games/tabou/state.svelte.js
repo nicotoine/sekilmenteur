@@ -55,6 +55,7 @@ class Tabou {
     this.scores = [0, 0];
     this.turnIndex = 0;
     this.deck = buildDeck(this.themeId);
+    this.turnLog = [];
     this.phase = 'ready';
   }
 
