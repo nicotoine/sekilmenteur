@@ -1,8 +1,36 @@
 import { defineConfig } from 'vite';
 import tailwindcss from '@tailwindcss/vite';
 import { svelte } from '@sveltejs/vite-plugin-svelte';
+import { VitePWA } from 'vite-plugin-pwa';
 
 export default defineConfig({
   base: './',
-  plugins: [tailwindcss(), svelte()],
+  plugins: [
+    tailwindcss(),
+    svelte(),
+    VitePWA({
+      registerType: 'autoUpdate',
+      includeAssets: ['apple-touch-icon.png'],
+      workbox: {
+        globPatterns: ['**/*.{js,css,html,woff2,png,svg}'],
+      },
+      manifest: {
+        name: 'Sékilmenteur',
+        short_name: 'Sékilmenteur',
+        description: 'Un mot secret. Un menteur parmi vous.',
+        lang: 'fr',
+        start_url: './',
+        scope: './',
+        display: 'standalone',
+        orientation: 'portrait',
+        background_color: '#0e0f1a',
+        theme_color: '#0e0f1a',
+        icons: [
+          { src: 'pwa-192x192.png', sizes: '192x192', type: 'image/png' },
+          { src: 'pwa-512x512.png', sizes: '512x512', type: 'image/png' },
+          { src: 'pwa-maskable-512x512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
+        ],
+      },
+    }),
+  ],
 });
