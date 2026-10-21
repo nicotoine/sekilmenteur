@@ -1,64 +1,54 @@
 <script>
-  import { game, ROUNDS } from './state.svelte.js';
+  import { game, MODES } from './state.svelte.js';
   import { bankThemes } from '../../lib/wordBank.js';
   import GameShell from '../../lib/GameShell.svelte';
   import ThemePicker from '../../lib/ThemePicker.svelte';
+  import ModePicker from '../../lib/ModePicker.svelte';
+  import Section from '../../lib/Section.svelte';
+  import Choice from '../../lib/Choice.svelte';
+  import HowTo from '../../lib/HowTo.svelte';
+  import TeamNames from '../../lib/TeamNames.svelte';
+  import Scoreboard from '../../lib/Scoreboard.svelte';
   import Timer from '../../lib/Timer.svelte';
 
   const cardCounts = [20, 30, 40, 50];
   const durations = [30, 45, 60, 90];
   const label = (n, one, many) => `${n} ${n > 1 ? many : one}`;
+  const scoreEntries = $derived(game.displayNames.map((name, i) => ({ name, score: game.totals[i] })));
 </script>
 
 <GameShell title="Time's Up" onExit={() => game.reset()}>
   {#if game.phase === 'setup'}
-    <header class="py-6 text-center">
-      <h1 class="text-5xl font-extrabold">Time's Up</h1>
-      <p class="mt-2 text-base-content/70">Les mêmes cartes, trois façons de les faire deviner.</p>
+    <header class="py-3 text-center">
+      <h1 class="text-4xl font-extrabold">Time's Up</h1>
+      <p class="mt-1 text-base-content/70">Les mêmes cartes, plusieurs façons de les faire deviner.</p>
     </header>
 
-    <section class="mb-6">
-      <h2 class="mb-3 text-xl font-bold">Équipes</h2>
-      <div class="flex flex-col gap-2">
-        {#each game.teamNames as _, i}
-          <input type="text" class="input input-lg h-12 w-full min-w-0 text-base" placeholder={`Équipe ${i + 1}`} maxlength="20" autocomplete="off" bind:value={game.teamNames[i]} />
-        {/each}
-      </div>
-    </section>
-
+    <TeamNames bind:names={game.teamNames} />
     <ThemePicker themes={bankThemes} bind:value={game.themeId} />
+    <ModePicker modes={MODES} bind:value={game.mode} />
 
-    <section class="mb-6 rounded-box bg-base-100 p-4">
-      <h2 class="mb-2 text-lg font-bold">Nombre de cartes</h2>
-      <div class="flex flex-wrap gap-2" role="radiogroup" aria-label="Nombre de cartes">
-        {#each cardCounts as n}
-          <button class="btn btn-sm h-10 {game.cardCount === n ? 'btn-secondary' : 'btn-outline'}" role="radio" aria-checked={game.cardCount === n} onclick={() => (game.cardCount = n)}>{n}</button>
-        {/each}
-      </div>
-
+    <Section title="Réglages" summary="{game.cardCount} cartes · {game.turnSeconds} s">
+      <h3 class="mb-2 font-bold">Nombre de cartes</h3>
+      <Choice options={cardCounts} bind:value={game.cardCount} label="Nombre de cartes" />
       <div class="divider my-3"></div>
+      <h3 class="mb-2 font-bold">Durée d'un tour</h3>
+      <Choice options={durations} bind:value={game.turnSeconds} label="Durée d'un tour" format={(d) => `${d} s`} />
+    </Section>
 
-      <h2 class="mb-2 text-lg font-bold">Durée d'un tour</h2>
-      <div class="flex flex-wrap gap-2" role="radiogroup" aria-label="Durée d'un tour">
-        {#each durations as d}
-          <button class="btn btn-sm h-10 {game.turnSeconds === d ? 'btn-secondary' : 'btn-outline'}" role="radio" aria-checked={game.turnSeconds === d} onclick={() => (game.turnSeconds = d)}>{d} s</button>
-        {/each}
-      </div>
-    </section>
-
-    <section class="mb-6 rounded-box bg-base-100 p-4 text-sm text-base-content/80">
-      <p class="mb-2"><strong>Comment jouer.</strong> Un joueur tient le téléphone et fait deviner les cartes à son équipe. Chaque mot trouvé rapporte 1 point. Quand toutes les cartes sont trouvées, on rejoue les mêmes avec une règle plus dure :</p>
+    <HowTo>
+      <p class="mb-2">Un joueur tient le téléphone et fait deviner les cartes à son équipe. Chaque mot trouvé rapporte 1 point. Quand toutes les cartes sont trouvées, on rejoue les mêmes avec une règle plus dure :</p>
       <ol class="list-inside list-decimal">
-        {#each ROUNDS as round}
+        {#each game.rounds as round}
           <li>{round.title}</li>
         {/each}
       </ol>
-    </section>
+    </HowTo>
 
     <button class="btn btn-primary btn-block h-14 text-lg" disabled={!game.canStart} onclick={() => game.start()}>Lancer la partie</button>
   {:else if game.phase === 'ready'}
     <header class="py-4 text-center">
-      <p class="text-sm text-base-content/70">Manche {game.round} sur {ROUNDS.length}</p>
+      <p class="text-sm text-base-content/70">Manche {game.round} sur {game.rounds.length}</p>
       <h2 class="text-2xl font-bold">{game.currentRound.title}</h2>
     </header>
 
@@ -72,14 +62,7 @@
       {/if}
     </section>
 
-    <div class="mt-4 flex justify-center gap-6 text-center">
-      {#each game.displayNames as name, i}
-        <div>
-          <p class="text-sm text-base-content/70">{name}</p>
-          <p class="font-display text-3xl font-extrabold">{game.totals[i]}</p>
-        </div>
-      {/each}
-    </div>
+    <div class="mt-4"><Scoreboard entries={scoreEntries} /></div>
 
     <button class="btn btn-primary btn-block mt-6 h-14 text-lg" onclick={() => game.startTurn()}>Démarrer le chrono ({game.turnDuration} s)</button>
   {:else if game.phase === 'turn'}
@@ -136,16 +119,16 @@
       {/each}
     </ul>
 
-    {#if game.round < ROUNDS.length}
+    {#if game.round < game.rounds.length}
       <section class="mb-6 rounded-box bg-base-100 p-4 text-center">
         <p class="text-sm text-base-content/70">Manche suivante</p>
-        <p class="text-xl font-bold text-secondary">{ROUNDS[game.round].title}</p>
-        <p class="mt-2 text-base-content/80">{ROUNDS[game.round].rule}</p>
+        <p class="text-xl font-bold text-secondary">{game.rounds[game.round].title}</p>
+        <p class="mt-2 text-base-content/80">{game.rounds[game.round].rule}</p>
       </section>
     {/if}
 
     <button class="btn btn-primary btn-block h-14 text-lg" onclick={() => game.nextRound()}>
-      {game.round < ROUNDS.length ? 'Manche suivante' : 'Voir le résultat'}
+      {game.round < game.rounds.length ? 'Manche suivante' : 'Voir le résultat'}
     </button>
   {:else if game.phase === 'end'}
     <header class="py-6 text-center">
@@ -163,7 +146,7 @@
             <span class="text-lg font-bold">{name}</span>
             <span class="font-display text-3xl font-extrabold">{game.totals[i]}</span>
           </div>
-          <p class="mt-1 text-sm text-base-content/70">{game.scores[i].map((n, r) => `${ROUNDS[r].title} ${n}`).join(' · ')}</p>
+          <p class="mt-1 text-sm text-base-content/70">{game.scores[i].map((n, r) => `${game.rounds[r].title} ${n}`).join(' · ')}</p>
         </li>
       {/each}
     </ul>

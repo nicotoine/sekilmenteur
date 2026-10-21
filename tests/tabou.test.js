@@ -1,10 +1,11 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import { game } from '../src/games/tabou/state.svelte.js';
+import { game, MODES } from '../src/games/tabou/state.svelte.js';
 
 beforeEach(() => {
   game.reset();
   game.teamNames = ['', ''];
   game.turnsPerTeam = 2;
+  game.mode = 'classique';
 });
 
 const playTurn = (...answers) => {
@@ -83,5 +84,46 @@ describe('tabou', () => {
     playTurn('found');
     game.nextTurn();
     expect(game.winnerIndex).toBe(-1);
+  });
+});
+
+describe('modes tabou', () => {
+  it('propose trois modes', () => {
+    expect(MODES.map((m) => m.id)).toEqual(['classique', 'strict', 'doux']);
+  });
+
+  it('strict : un tabou coûte 1 point et termine le tour', () => {
+    game.mode = 'strict';
+    game.start();
+    game.startTurn();
+    game.answer('found');
+    game.answer('taboo');
+    expect(game.phase).toBe('summary');
+    expect(game.turnPoints).toBe(0);
+    expect(game.scores).toEqual([0, 0]);
+    game.answer('found');
+    expect(game.turnLog).toHaveLength(2);
+  });
+
+  it('doux : un tabou ne coûte rien et le tour continue', () => {
+    game.mode = 'doux';
+    game.start();
+    game.startTurn();
+    const first = game.card.word;
+    game.answer('taboo');
+    expect(game.phase).toBe('turn');
+    expect(game.card.word).not.toBe(first);
+    game.answer('found');
+    game.endTurn();
+    expect(game.turnPoints).toBe(1);
+    expect(game.scores).toEqual([1, 0]);
+    expect(game.points.taboo).toBe(0);
+  });
+
+  it('classique : un tabou coûte 1 point sans arrêter le tour', () => {
+    game.start();
+    playTurn('taboo', 'found');
+    expect(game.scores).toEqual([0, 0]);
+    expect(game.currentMode.tabooEndsTurn).toBe(false);
   });
 });

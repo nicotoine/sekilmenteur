@@ -1,13 +1,18 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/svelte';
 import App from '../src/App.svelte';
-import { games } from '../src/games/registry.js';
+import { games, groups } from '../src/games/registry.js';
 import { game as sekilmenteur } from '../src/games/sekilmenteur/state.svelte.js';
 import { game as undercover } from '../src/games/undercover/state.svelte.js';
+import { game as loupgarou } from '../src/games/loupgarou/state.svelte.js';
 import { game as tabou } from '../src/games/tabou/state.svelte.js';
 import { game as timesup } from '../src/games/timesup/state.svelte.js';
 import { game as quisuisje } from '../src/games/quisuisje/state.svelte.js';
+import { game as petitbac } from '../src/games/petitbac/state.svelte.js';
+import { game as actionverite } from '../src/games/actionverite/state.svelte.js';
+import { game as jamais } from '../src/games/jamais/state.svelte.js';
 import { roster } from '../src/lib/roster.svelte.js';
+import Section from '../src/lib/Section.svelte';
 
 const FLIP_WAIT_MS = 600;
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -28,11 +33,17 @@ async function typePlayers(names) {
   for (const [i, name] of names.entries()) await fireEvent.input(fields[i], { target: { value: name } });
 }
 
+const allGames = [sekilmenteur, undercover, loupgarou, tabou, timesup, quisuisje, petitbac, actionverite, jamais];
+
 beforeEach(async () => {
-  [sekilmenteur, undercover, tabou, timesup, quisuisje].forEach((g) => g.reset());
+  allGames.forEach((g) => {
+    g.reset();
+    g.mode = 'classique';
+  });
   roster.names = ['', '', ''];
   tabou.teamNames = ['', ''];
   timesup.teamNames = ['', ''];
+  localStorage.clear();
   await open('');
 });
 
@@ -45,7 +56,26 @@ describe('menu', () => {
       const link = screen.getByRole('link', { name: new RegExp(g.name.replace(/[?']/g, '.')) });
       expect(link).toHaveAttribute('href', `#/${g.id}`);
     }
-    expect(games.length).toBeGreaterThanOrEqual(5);
+    expect(games.length).toBeGreaterThanOrEqual(9);
+  });
+
+  it('range les jeux dans des groupes dépliants, repliables et mémorisés', async () => {
+    render(App);
+    const sections = document.querySelectorAll('details');
+    expect(sections).toHaveLength(groups.length);
+    for (const section of sections) expect(section.open).toBe(true);
+    for (const g of games) expect(groups.some((gr) => gr.id === g.group)).toBe(true);
+
+    const first = sections[0];
+    first.open = false;
+    first.dispatchEvent(new Event('toggle'));
+    await waitFor(() => expect(JSON.parse(localStorage.getItem('menu:collapsed'))[groups[0].id]).toBe(true));
+
+    cleanup();
+    render(App);
+    const again = document.querySelectorAll('details');
+    expect(again[0].open).toBe(false);
+    expect(again[1].open).toBe(true);
   });
 
   it.each(games.map((g) => [g.id, g.name]))('ouvre %s puis revient au menu', async (id) => {
@@ -54,6 +84,50 @@ describe('menu', () => {
     await waitFor(() => expect(screen.getByRole('button', { name: /Jeux/ })).toBeInTheDocument());
     await fireEvent.click(screen.getByRole('button', { name: /Jeux/ }));
     await waitFor(() => expect(screen.getByRole('heading', { name: 'Jeux de soirée' })).toBeInTheDocument());
+  });
+});
+
+describe('sections dépliantes', () => {
+  it('se replient en affichant un résumé', async () => {
+    render(Section, { title: 'Thème', summary: '🎲 Tous', open: false, children: (() => {}) });
+    const details = document.querySelector('details');
+    expect(details.open).toBe(false);
+    expect(screen.getByText('Thème')).toBeInTheDocument();
+    expect(screen.getByText('🎲 Tous')).toBeInTheDocument();
+    await fireEvent.click(document.querySelector('summary'));
+    await waitFor(() => expect(details.open).toBe(true));
+  });
+
+  it('replie thème, mode et réglages sur l\'écran de préparation', async () => {
+    render(App);
+    await open('sekilmenteur');
+    await screen.findByRole('button', { name: 'Lancer la partie' });
+    const titles = [...document.querySelectorAll('details > summary')].map((s) => s.textContent.trim().split(/\s{2,}|\n/)[0]);
+    expect(titles.join(' ')).toMatch(/Thème/);
+    expect(titles.join(' ')).toMatch(/Mode/);
+    expect(titles.join(' ')).toMatch(/Réglages/);
+    expect(titles.join(' ')).toMatch(/Comment jouer/);
+    for (const d of document.querySelectorAll('details')) expect(d.open).toBe(false);
+  });
+
+  it('change de mode depuis le sélecteur', async () => {
+    render(App);
+    await open('undercover');
+    await screen.findByRole('button', { name: 'Lancer la partie' });
+    expect(screen.getByText('🎯 Classique')).toBeInTheDocument();
+    await fireEvent.click(screen.getByRole('radio', { name: /Sans pitié/ }));
+    expect(undercover.mode).toBe('sans-pitie');
+    expect(screen.getByText('💀 Sans pitié')).toBeInTheDocument();
+    expect(screen.getByRole('radio', { name: /Sans pitié/ })).toHaveAttribute('aria-checked', 'true');
+  });
+
+  it('résume le thème choisi', async () => {
+    render(App);
+    await open('tabou');
+    await screen.findByRole('button', { name: 'Lancer la partie' });
+    await fireEvent.click(screen.getByRole('radio', { name: /Animaux/ }));
+    expect(tabou.themeId).toBe('animaux');
+    expect(screen.getAllByText('🦁 Animaux').length).toBeGreaterThanOrEqual(2);
   });
 });
 
@@ -205,5 +279,170 @@ describe('Undercover dans l\'interface', () => {
       await sleep(FLIP_WAIT_MS);
     }
     await waitFor(() => expect(screen.getByRole('heading', { name: 'Chacun décrit son mot' })).toBeInTheDocument());
+  });
+});
+
+describe('mode espion dans l\'interface', () => {
+  it('permet à un menteur de se dévoiler et affiche le mot au groupe', async () => {
+    render(App);
+    await open('sekilmenteur');
+    await screen.findByRole('button', { name: 'Lancer la partie' });
+    await typePlayers(['Alice', 'Bob', 'Chloé']);
+    await fireEvent.click(screen.getByRole('radio', { name: /Espion/ }));
+    sekilmenteur.start();
+    sekilmenteur.beginClues();
+    await fireEvent.click(await screen.findByRole('button', { name: /Un menteur se dévoile/ }));
+    expect(screen.getByRole('heading', { name: 'Qui se dévoile ?' })).toBeInTheDocument();
+    expect(screen.getByText(sekilmenteur.entry.word)).toBeInTheDocument();
+    const liar = sekilmenteur.players.find((p) => p.isLiar);
+    await fireEvent.click(screen.getByRole('button', { name: liar.name }));
+    await fireEvent.click(button('Il a trouvé'));
+    await waitFor(() => expect(screen.getByRole('heading', { name: 'Les menteurs gagnent' })).toBeInTheDocument());
+    expect(screen.getByText(`${liar.name} a deviné le mot.`)).toBeInTheDocument();
+  });
+});
+
+describe('Loup-Garou dans l\'interface', () => {
+  it('exige 4 joueurs puis distribue les rôles et lance la nuit', async () => {
+    render(App);
+    await open('loupgarou');
+    const start = await screen.findByRole('button', { name: 'Lancer la partie' });
+    await typePlayers(['Alice', 'Bob', 'Chloé']);
+    expect(start).toBeDisabled();
+    expect(screen.getByText(/au moins 4 joueurs/)).toBeInTheDocument();
+    await fireEvent.click(button('Ajouter un joueur'));
+    await typePlayers(['Alice', 'Bob', 'Chloé', 'Dan']);
+    expect(start).toBeEnabled();
+    await fireEvent.click(start);
+
+    for (const name of ['Alice', 'Bob', 'Chloé', 'Dan']) {
+      await fireEvent.click(await screen.findByText(name));
+      expect(screen.getByText(/Tu es /)).toBeInTheDocument();
+      const hide = screen.getByRole('button', { name: /Cacher/ });
+      await waitFor(() => expect(hide).toBeEnabled());
+      await fireEvent.click(hide);
+      await sleep(FLIP_WAIT_MS);
+    }
+
+    await waitFor(() => expect(screen.getByText('Passe le téléphone à')).toBeInTheDocument());
+    const first = loupgarou.nightPlayer;
+    await fireEvent.click(button(`Je suis ${first.name}`));
+    if (first.role === 'loup') {
+      expect(screen.getByText(/Les loups se réveillent/)).toBeInTheDocument();
+      expect(button('Je me rendors')).toBeDisabled();
+    } else if (first.role === 'villageois') {
+      expect(screen.getByText('Tu dors paisiblement')).toBeInTheDocument();
+    }
+  });
+
+  it('affiche les morts à l\'aube puis le vote du village', async () => {
+    render(App);
+    await open('loupgarou');
+    await screen.findByRole('button', { name: 'Lancer la partie' });
+    roster.names = ['Alice', 'Bob', 'Chloé', 'Dan', 'Eve', 'Fred'];
+    loupgarou.roles = { voyante: false, sorciere: false, chasseur: false };
+    loupgarou.start();
+    loupgarou.beginNight();
+    const victim = loupgarou.alivePlayers.find((p) => p.role === 'villageois');
+    while (loupgarou.phase === 'night') {
+      loupgarou.uncover();
+      if (loupgarou.nightPlayer.role === 'loup') loupgarou.chooseVictim(victim);
+      loupgarou.nextSleeper();
+    }
+    await waitFor(() => expect(screen.getByRole('heading', { name: /Le village se réveille/ })).toBeInTheDocument());
+    expect(screen.getByText(victim.name)).toBeInTheDocument();
+    expect(screen.getByText('🧑‍🌾 Villageois')).toBeInTheDocument();
+    await fireEvent.click(button('Continuer'));
+    await waitFor(() => expect(screen.getByRole('heading', { name: 'Le village débat' })).toBeInTheDocument());
+    const wolf = loupgarou.alivePlayers.find((p) => p.role === 'loup');
+    await fireEvent.click(screen.getByRole('button', { name: wolf.name }));
+    await fireEvent.click(button(`Éliminer ${wolf.name}`));
+    await waitFor(() => expect(screen.getByText(`${wolf.name} est éliminé`)).toBeInTheDocument());
+    await fireEvent.click(button('La nuit tombe'));
+    await waitFor(() => expect(screen.getByRole('heading', { name: 'Le village gagne' })).toBeInTheDocument());
+  });
+});
+
+describe('Petit Bac dans l\'interface', () => {
+  it('tire une lettre, affiche les catégories et saisit les points', async () => {
+    render(App);
+    await open('petitbac');
+    await screen.findByRole('button', { name: 'Lancer la partie' });
+    await typePlayers(['Alice', 'Bob', 'Chloé']);
+    petitbac.roundCount = 1;
+    await fireEvent.click(button('Lancer la partie'));
+    await fireEvent.click(await screen.findByRole('button', { name: 'Tirer la lettre' }));
+    expect(screen.getByLabelText(`Lettre ${petitbac.letter}`)).toBeInTheDocument();
+    for (const c of petitbac.categories) expect(screen.getByText(c)).toBeInTheDocument();
+    await fireEvent.click(button('Stop !'));
+    await screen.findByRole('heading', { name: `Lettre ${petitbac.letter} : les points` });
+    await fireEvent.click(button('Plus pour Alice'));
+    await fireEvent.click(button('Plus pour Alice'));
+    await fireEvent.click(button('Plus pour Bob'));
+    expect(petitbac.roundScores).toEqual([2, 1, 0]);
+    await fireEvent.click(button('Voir le résultat'));
+    await waitFor(() => expect(screen.getByRole('heading', { name: 'Alice gagne' })).toBeInTheDocument());
+  });
+});
+
+describe('Action ou Vérité dans l\'interface', () => {
+  it('propose le choix, affiche la carte et passe au joueur suivant', async () => {
+    render(App);
+    await open('actionverite');
+    await screen.findByRole('button', { name: 'Lancer la partie' });
+    await typePlayers(['Alice', 'Bob', 'Chloé']);
+    await fireEvent.click(button('Lancer la partie'));
+    expect(screen.getByText('Alice')).toBeInTheDocument();
+    await fireEvent.click(await screen.findByRole('button', { name: /Vérité/ }));
+    expect(screen.getByText(actionverite.card)).toBeInTheDocument();
+    await fireEvent.click(button('Fait !'));
+    await waitFor(() => expect(screen.getByRole('heading', { name: 'Bob' })).toBeInTheDocument());
+    await fireEvent.click(button(/Action/));
+    await fireEvent.click(button(/Dégonflé/));
+    await fireEvent.click(await screen.findByRole('button', { name: 'Terminer la partie' }));
+    await waitFor(() => expect(screen.getByText(/Bob s'est dégonflé 1 fois/)).toBeInTheDocument());
+  });
+
+  it('en mode roulette, un seul bouton tire au sort', async () => {
+    render(App);
+    await open('actionverite');
+    await screen.findByRole('button', { name: 'Lancer la partie' });
+    await typePlayers(['Alice', 'Bob', 'Chloé']);
+    await fireEvent.click(screen.getByRole('radio', { name: /Roulette/ }));
+    await fireEvent.click(button('Lancer la partie'));
+    expect(screen.queryByRole('button', { name: /Vérité/ })).toBeNull();
+    await fireEvent.click(await screen.findByRole('button', { name: /Tourner la roue/ }));
+    expect(['truth', 'dare']).toContain(actionverite.kind);
+  });
+});
+
+describe('Je n\'ai jamais dans l\'interface', () => {
+  it('se lance sans joueurs en mode classique et enchaîne les cartes', async () => {
+    render(App);
+    await open('jamais');
+    const start = await screen.findByRole('button', { name: 'Lancer la partie' });
+    expect(screen.queryByPlaceholderText('Nom du joueur')).toBeNull();
+    expect(start).toBeEnabled();
+    await fireEvent.click(start);
+    expect(await screen.findByText(jamais.card)).toBeInTheDocument();
+    const first = jamais.card;
+    await fireEvent.click(button('Carte suivante'));
+    await waitFor(() => expect(screen.getByText(jamais.card)).toBeInTheDocument());
+    expect(jamais.card).not.toBe(first);
+  });
+
+  it('en mode dix doigts, demande les joueurs et compte les vies', async () => {
+    render(App);
+    await open('jamais');
+    await screen.findByRole('button', { name: 'Lancer la partie' });
+    await fireEvent.click(screen.getByRole('radio', { name: /Dix doigts/ }));
+    const start = button('Lancer la partie');
+    expect(start).toBeDisabled();
+    await typePlayers(['Alice', 'Bob', 'Chloé']);
+    expect(start).toBeEnabled();
+    await fireEvent.click(start);
+    await fireEvent.click(await screen.findByRole('button', { name: /Alice/ }));
+    await fireEvent.click(button(/Carte suivante \(1 coupable\)/));
+    await waitFor(() => expect(jamais.players[0].lives).toBe(9));
   });
 });

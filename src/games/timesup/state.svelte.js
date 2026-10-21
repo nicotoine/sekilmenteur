@@ -1,19 +1,28 @@
 import { bankThemes, pickWords } from '../../lib/wordBank.js';
-import { ALL_THEMES } from '../../lib/themeUtil.js';
+import { ALL_THEMES, validMode } from '../../lib/themeUtil.js';
 import { shuffle } from '../../lib/shuffle.js';
 import { loadSettings, saveSettings } from '../../lib/storage.js';
 
 const STORAGE_KEY = 'timesup:settings';
-export const ROUNDS = [
-  { title: 'Décris librement', rule: 'Fais deviner le mot avec toutes les phrases que tu veux, sans prononcer le mot.' },
-  { title: 'Un seul mot', rule: 'Un seul mot par carte, sans répéter un mot de la carte. Tu peux le dire à nouveau.' },
-  { title: 'Mime', rule: 'Aucun mot, aucun bruit. Uniquement des gestes.' },
+
+const DESCRIBE = { title: 'Décris librement', rule: 'Fais deviner le mot avec toutes les phrases que tu veux, sans prononcer le mot.' };
+const ONE_WORD = { title: 'Un seul mot', rule: 'Un seul mot par carte, sans répéter un mot de la carte. Tu peux le dire à nouveau.' };
+const MIME = { title: 'Mime', rule: 'Aucun mot, aucun bruit. Uniquement des gestes.' };
+const POSE = { title: 'Une pose', rule: 'Une seule pose figée, sans bouger ni parler. Le plus dur.' };
+
+export const ROUNDS = [DESCRIBE, ONE_WORD, MIME];
+
+export const MODES = [
+  { id: 'classique', name: 'Classique', emoji: '🎯', description: 'Trois manches : décrire, un seul mot, mimer.', rounds: ROUNDS },
+  { id: 'express', name: 'Express', emoji: '⚡', description: 'Deux manches seulement : décrire, puis mimer.', rounds: [DESCRIBE, MIME] },
+  { id: 'expert', name: 'Expert', emoji: '🧠', description: 'Quatre manches : la dernière se joue avec une seule pose figée.', rounds: [DESCRIBE, ONE_WORD, MIME, POSE] },
 ];
 
 class TimesUp {
   phase = $state('setup'); // setup | ready | turn | summary | roundEnd | end
   teamNames = $state(['', '']);
   themeId = $state(ALL_THEMES);
+  mode = $state('classique');
   cardCount = $state(30);
   turnSeconds = $state(45);
 
@@ -32,8 +41,15 @@ class TimesUp {
     const saved = loadSettings(STORAGE_KEY);
     if (Number.isFinite(saved.cardCount)) this.cardCount = saved.cardCount;
     if (Number.isFinite(saved.turnSeconds)) this.turnSeconds = saved.turnSeconds;
+    this.mode = validMode(MODES, saved.mode);
   }
 
+  get currentMode() {
+    return MODES.find((m) => m.id === this.mode) ?? MODES[0];
+  }
+  get rounds() {
+    return this.currentMode.rounds;
+  }
   get canStart() {
     return bankThemes.length > 0;
   }
@@ -44,7 +60,7 @@ class TimesUp {
     return this.displayNames[this.teamIndex];
   }
   get currentRound() {
-    return ROUNDS[this.round - 1];
+    return this.rounds[this.round - 1];
   }
   get turnDuration() {
     return this.carryover > 0 ? this.carryover : this.turnSeconds;
@@ -62,10 +78,10 @@ class TimesUp {
 
   start() {
     if (!this.canStart) return;
-    saveSettings(STORAGE_KEY, { cardCount: this.cardCount, turnSeconds: this.turnSeconds });
+    saveSettings(STORAGE_KEY, { cardCount: this.cardCount, turnSeconds: this.turnSeconds, mode: this.mode });
     this.cards = pickWords(bankThemes, this.themeId, this.cardCount);
     this.pile = shuffle(this.cards);
-    this.scores = [[0, 0, 0], [0, 0, 0]];
+    this.scores = [this.rounds.map(() => 0), this.rounds.map(() => 0)];
     this.round = 1;
     this.teamIndex = 0;
     this.carryover = 0;
@@ -114,7 +130,7 @@ class TimesUp {
   }
 
   nextRound() {
-    if (this.round >= ROUNDS.length) {
+    if (this.round >= this.rounds.length) {
       this.phase = 'end';
       return;
     }

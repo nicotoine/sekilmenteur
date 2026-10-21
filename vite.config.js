@@ -17,7 +17,7 @@ export default defineConfig({
       manifest: {
         name: 'Jeux de soirée',
         short_name: 'Jeux',
-        description: 'Sékilmenteur, Undercover, Tabou : des jeux de soirée sur un seul téléphone.',
+        description: 'Sékilmenteur, Undercover, Loup-Garou, Tabou, Time\'s Up, Petit Bac… des jeux de soirée sur un seul téléphone.',
         lang: 'fr',
         start_url: './',
         scope: './',

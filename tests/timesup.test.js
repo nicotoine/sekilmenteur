@@ -1,11 +1,12 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import { game, ROUNDS } from '../src/games/timesup/state.svelte.js';
+import { game, ROUNDS, MODES } from '../src/games/timesup/state.svelte.js';
 
 beforeEach(() => {
   game.reset();
   game.teamNames = ['', ''];
   game.cardCount = 20;
   game.turnSeconds = 45;
+  game.mode = 'classique';
 });
 
 const clearPile = (timeLeft) => {
@@ -104,5 +105,44 @@ describe('time\'s up', () => {
     game.start();
     game.found();
     expect(game.scores[0]).toEqual([0, 0, 0]);
+  });
+});
+
+describe('modes time\'s up', () => {
+  it('propose trois modes avec un nombre de manches différent', () => {
+    expect(MODES.map((m) => [m.id, m.rounds.length])).toEqual([['classique', 3], ['express', 2], ['expert', 4]]);
+    expect(MODES.every((m) => m.rounds.every((r) => r.title && r.rule))).toBe(true);
+  });
+
+  it('express : la partie finit après deux manches, les scores ont deux colonnes', () => {
+    game.mode = 'express';
+    game.start();
+    expect(game.scores).toEqual([[0, 0], [0, 0]]);
+    expect(game.rounds.map((r) => r.title)).toEqual(['Décris librement', 'Mime']);
+    for (let round = 1; round <= 2; round++) {
+      clearPile(5);
+      game.afterSummary();
+      game.nextRound();
+    }
+    expect(game.phase).toBe('end');
+    expect(game.totals).toEqual([40, 0]);
+  });
+
+  it('expert : quatre manches, la dernière est une pose', () => {
+    game.mode = 'expert';
+    game.start();
+    expect(game.scores[0]).toHaveLength(4);
+    expect(game.rounds.at(-1).title).toBe('Une pose');
+    for (let round = 1; round <= 3; round++) {
+      clearPile(5);
+      game.afterSummary();
+      game.nextRound();
+    }
+    expect(game.phase).toBe('ready');
+    expect(game.round).toBe(4);
+    clearPile(5);
+    game.afterSummary();
+    game.nextRound();
+    expect(game.phase).toBe('end');
   });
 });
