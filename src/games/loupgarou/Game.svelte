@@ -30,10 +30,11 @@
   }
 </script>
 
-<GameShell title="Loup-Garou" onExit={() => game.reset()}>
+<GameShell title="Loupiétu" onExit={() => game.reset()}>
   {#if game.phase === 'setup'}
     <header class="py-3 text-center">
-      <h1 class="text-4xl font-extrabold">Loup-Garou</h1>
+      <h1 class="text-4xl font-extrabold">Loupiétu</h1>
+      <p class="text-sm text-base-content/50">Loup-Garou</p>
       <p class="mt-1 text-base-content/70">La nuit, les loups dévorent. Le jour, le village vote.</p>
     </header>
 

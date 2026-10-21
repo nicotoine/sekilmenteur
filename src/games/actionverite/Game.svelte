@@ -11,10 +11,11 @@
   const playerIndex = () => game.turnIndex % game.players.length;
 </script>
 
-<GameShell title="Action ou Vérité" onExit={() => game.reset()}>
+<GameShell title="Capoupacap" onExit={() => game.reset()}>
   {#if game.phase === 'setup'}
     <header class="py-3 text-center">
-      <h1 class="text-4xl font-extrabold">Action ou Vérité</h1>
+      <h1 class="text-4xl font-extrabold">Capoupacap</h1>
+      <p class="text-sm text-base-content/50">Action ou Vérité</p>
       <p class="mt-1 text-base-content/70">Le grand classique. Sans tricher.</p>
     </header>
 

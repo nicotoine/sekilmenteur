@@ -40,6 +40,7 @@
 {#if game.phase === 'setup'}
   <header class="py-3 text-center">
     <h1 class="text-4xl font-extrabold">Sékilmenteur</h1>
+    <p class="text-sm text-base-content/50">C'est qui le menteur ?</p>
     <p class="mt-1 text-base-content/70">Un mot secret. Un menteur parmi vous.</p>
   </header>
 

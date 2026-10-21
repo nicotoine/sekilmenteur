@@ -13,10 +13,11 @@
   const playerIndex = (player) => game.players.indexOf(player);
 </script>
 
-<GameShell title="Je n'ai jamais" onExit={() => game.reset()}>
+<GameShell title="Jamédelavi" onExit={() => game.reset()}>
   {#if game.phase === 'setup'}
     <header class="py-3 text-center">
-      <h1 class="text-4xl font-extrabold">Je n'ai jamais…</h1>
+      <h1 class="text-4xl font-extrabold">Jamédelavi</h1>
+      <p class="text-sm text-base-content/50">Je n'ai jamais</p>
       <p class="mt-1 text-base-content/70">Ceux qui l'ont déjà fait se dénoncent.</p>
     </header>
 

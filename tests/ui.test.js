@@ -59,6 +59,16 @@ describe('menu', () => {
     expect(games.length).toBeGreaterThanOrEqual(9);
   });
 
+  it('affiche le nom rigolo et le nom classique de chaque jeu', () => {
+    render(App);
+    for (const g of games) {
+      expect(g.aka).toBeTruthy();
+      expect(g.name).not.toBe(g.aka);
+      expect(screen.getByText(g.aka)).toBeInTheDocument();
+    }
+    expect(games.map((g) => g.name)).toContain('Kilintru');
+  });
+
   it('range les jeux dans des groupes dépliants, repliables et mémorisés', async () => {
     render(App);
     const sections = document.querySelectorAll('details');

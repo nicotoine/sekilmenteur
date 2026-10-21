@@ -16,10 +16,11 @@
   const durations = [60, 90, 120, 180];
 </script>
 
-<GameShell title="Petit Bac" onExit={() => game.reset()}>
+<GameShell title="Çakomanspar" onExit={() => game.reset()}>
   {#if game.phase === 'setup'}
     <header class="py-3 text-center">
-      <h1 class="text-4xl font-extrabold">Petit Bac</h1>
+      <h1 class="text-4xl font-extrabold">Çakomanspar</h1>
+      <p class="text-sm text-base-content/50">Petit Bac</p>
       <p class="mt-1 text-base-content/70">Une lettre, des catégories, un papier et un stylo chacun.</p>
     </header>
 

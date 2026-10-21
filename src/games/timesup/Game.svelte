@@ -17,10 +17,11 @@
   const scoreEntries = $derived(game.displayNames.map((name, i) => ({ name, score: game.totals[i] })));
 </script>
 
-<GameShell title="Time's Up" onExit={() => game.reset()}>
+<GameShell title="Dépêchtoi" onExit={() => game.reset()}>
   {#if game.phase === 'setup'}
     <header class="py-3 text-center">
-      <h1 class="text-4xl font-extrabold">Time's Up</h1>
+      <h1 class="text-4xl font-extrabold">Dépêchtoi</h1>
+      <p class="text-sm text-base-content/50">Time's Up</p>
       <p class="mt-1 text-base-content/70">Les mêmes cartes, plusieurs façons de les faire deviner.</p>
     </header>
 

@@ -40,7 +40,7 @@
             >
               <span class="text-2xl" aria-hidden="true">{game.emoji}</span>
               <span class="min-w-0">
-                <span class="block font-display text-lg font-extrabold">{game.name}</span>
+                <span class="block font-display text-lg font-extrabold">{game.name} <span class="text-xs font-normal text-base-content/50">{game.aka}</span></span>
                 <span class="block truncate text-sm text-base-content/70">{game.tagline}</span>
               </span>
               <span class="ml-auto shrink-0 text-xs text-base-content/50">{game.players}</span>

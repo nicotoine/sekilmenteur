@@ -29,10 +29,11 @@
   );
 </script>
 
-<GameShell title="Undercover" onExit={() => game.reset()}>
+<GameShell title="Kilintru" onExit={() => game.reset()}>
   {#if game.phase === 'setup'}
     <header class="py-3 text-center">
-      <h1 class="text-4xl font-extrabold">Undercover</h1>
+      <h1 class="text-4xl font-extrabold">Kilintru</h1>
+      <p class="text-sm text-base-content/50">Undercover</p>
       <p class="mt-1 text-base-content/70">Un mot commun. Sauf pour l'intrus.</p>
     </header>
 

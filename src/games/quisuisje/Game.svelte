@@ -25,10 +25,11 @@
   }
 </script>
 
-<GameShell title="Qui suis-je ?" onExit={() => game.reset()}>
+<GameShell title="Surlefron" onExit={() => game.reset()}>
   {#if game.phase === 'setup'}
     <header class="py-3 text-center">
-      <h1 class="text-4xl font-extrabold">Qui suis-je ?</h1>
+      <h1 class="text-4xl font-extrabold">Surlefron</h1>
+      <p class="text-sm text-base-content/50">Qui suis-je ?</p>
       <p class="mt-1 text-base-content/70">Le téléphone sur le front, devine qui tu es.</p>
     </header>
 
