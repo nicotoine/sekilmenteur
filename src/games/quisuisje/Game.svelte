@@ -1,8 +1,13 @@
 <script>
-  import { game, themes } from './state.svelte.js';
+  import { game, themes, MODES } from './state.svelte.js';
   import GameShell from '../../lib/GameShell.svelte';
   import PlayerList from '../../lib/PlayerList.svelte';
   import ThemePicker from '../../lib/ThemePicker.svelte';
+  import ModePicker from '../../lib/ModePicker.svelte';
+  import Section from '../../lib/Section.svelte';
+  import Choice from '../../lib/Choice.svelte';
+  import HowTo from '../../lib/HowTo.svelte';
+  import Scoreboard from '../../lib/Scoreboard.svelte';
   import Timer from '../../lib/Timer.svelte';
   import Countdown from '../../lib/Countdown.svelte';
   import Avatar from '../../lib/Avatar.svelte';
@@ -20,37 +25,29 @@
   }
 </script>
 
-<GameShell title="Qui suis-je ?" onExit={() => game.reset()}>
+<GameShell title="Surlefron" onExit={() => game.reset()}>
   {#if game.phase === 'setup'}
-    <header class="py-6 text-center">
-      <h1 class="text-5xl font-extrabold">Qui suis-je ?</h1>
-      <p class="mt-2 text-base-content/70">Le téléphone sur le front, les autres te font deviner.</p>
+    <header class="py-3 text-center">
+      <h1 class="text-4xl font-extrabold">Surlefron</h1>
+      <p class="text-sm text-base-content/50">Qui suis-je ?</p>
+      <p class="mt-1 text-base-content/70">Le téléphone sur le front, devine qui tu es.</p>
     </header>
 
     <PlayerList />
     <ThemePicker {themes} bind:value={game.themeId} />
+    <ModePicker modes={MODES} bind:value={game.mode} />
 
-    <section class="mb-6 rounded-box bg-base-100 p-4">
-      <h2 class="mb-2 text-lg font-bold">Durée d'un tour</h2>
-      <div class="flex flex-wrap gap-2" role="radiogroup" aria-label="Durée d'un tour">
-        {#each durations as d}
-          <button class="btn btn-sm h-10 {game.turnSeconds === d ? 'btn-secondary' : 'btn-outline'}" role="radio" aria-checked={game.turnSeconds === d} onclick={() => (game.turnSeconds = d)}>{d} s</button>
-        {/each}
-      </div>
-
+    <Section title="Réglages" summary="{game.turnSeconds} s · {game.laps} tour{game.laps > 1 ? 's' : ''} de table">
+      <h3 class="mb-2 font-bold">Durée d'un tour</h3>
+      <Choice options={durations} bind:value={game.turnSeconds} label="Durée d'un tour" format={(d) => `${d} s`} />
       <div class="divider my-3"></div>
+      <h3 class="mb-2 font-bold">Tours de table</h3>
+      <Choice options={lapCounts} bind:value={game.laps} label="Tours de table" />
+    </Section>
 
-      <h2 class="mb-2 text-lg font-bold">Tours de table</h2>
-      <div class="flex flex-wrap gap-2" role="radiogroup" aria-label="Tours de table">
-        {#each lapCounts as n}
-          <button class="btn btn-sm h-10 {game.laps === n ? 'btn-secondary' : 'btn-outline'}" role="radio" aria-checked={game.laps === n} onclick={() => (game.laps = n)}>{n}</button>
-        {/each}
-      </div>
-    </section>
-
-    <section class="mb-6 rounded-box bg-base-100 p-4 text-sm text-base-content/80">
-      <p><strong>Comment jouer.</strong> Tu tiens le téléphone sur ton front, écran vers les autres. Ils voient le mot et te le font deviner sans le dire. Dès que tu trouves, ils appuient sur « Trouvé ». Un point par mot trouvé.</p>
-    </section>
+    <HowTo>
+      <p>Tu tiens le téléphone sur ton front, écran vers les autres. Ils voient le mot et te le font deviner sans le dire. Dès que tu trouves, ils appuient sur « Trouvé ». Un point par mot trouvé.</p>
+    </HowTo>
 
     <button class="btn btn-primary btn-block h-14 text-lg" disabled={!game.canStart} onclick={() => game.start()}>Lancer la partie</button>
   {:else if game.phase === 'ready'}
@@ -63,13 +60,10 @@
       <p class="mt-3 text-base-content/70">C'est à</p>
       <p class="my-2 text-4xl font-extrabold text-secondary">{game.currentPlayer.name}</p>
       <p class="mt-4">Mets le téléphone sur ton front, écran vers les autres, sans regarder le mot.</p>
+      <p class="mt-2 text-sm text-secondary">{game.currentMode.emoji} {game.currentMode.description}</p>
     </section>
 
-    <ul class="mt-4 flex flex-wrap justify-center gap-2">
-      {#each game.players as player}
-        <li class="badge badge-neutral badge-lg gap-2">{player.name} <strong>{player.score}</strong></li>
-      {/each}
-    </ul>
+    <div class="mt-4"><Scoreboard entries={game.players} /></div>
 
     <button class="btn btn-primary btn-block mt-6 h-14 text-lg" onclick={() => game.beginCountdown()}>Je suis prêt</button>
   {:else if game.phase === 'countdown'}
@@ -98,7 +92,10 @@
     </div>
   {:else if game.phase === 'summary'}
     <header class="py-4 text-center">
-      <h2 class="text-3xl font-extrabold">{game.currentPlayer.name} : +{game.found.length}</h2>
+      <h2 class="text-3xl font-extrabold">{game.currentPlayer.name} : +{game.turnPoints}</h2>
+      {#if game.currentMode.skipCost > 0 && game.passed.length > 0}
+        <p class="mt-1 text-sm text-base-content/70">{game.found.length} trouvé{game.found.length > 1 ? 's' : ''}, {game.passed.length} passé{game.passed.length > 1 ? 's' : ''}</p>
+      {/if}
     </header>
 
     {#if game.found.length > 0}

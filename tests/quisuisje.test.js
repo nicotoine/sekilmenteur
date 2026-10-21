@@ -1,10 +1,11 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import { game, themes } from '../src/games/quisuisje/state.svelte.js';
+import { game, themes, MODES } from '../src/games/quisuisje/state.svelte.js';
 import { setPlayers } from './helpers.js';
 
 beforeEach(() => {
   game.reset();
   game.laps = 1;
+  game.mode = 'classique';
   setPlayers(3);
 });
 
@@ -12,7 +13,10 @@ describe('qui suis-je', () => {
   it('ne propose que des thèmes de personnes ou de personnages', () => {
     const ids = themes.map((t) => t.id);
     expect(ids).toContain('celebrites');
+    expect(ids).toContain('histoire');
+    expect(ids).toContain('superheros');
     expect(ids).not.toContain('lieux');
+    expect(ids).not.toContain('transports');
     expect(themes.every((t) => !t.adult)).toBe(true);
   });
 
@@ -79,5 +83,40 @@ describe('qui suis-je', () => {
     game.start();
     game.answer(true);
     expect(game.found).toHaveLength(0);
+  });
+});
+
+describe('modes qui suis-je', () => {
+  it('propose trois modes', () => {
+    expect(MODES.map((m) => m.id)).toEqual(['classique', 'questions', 'malus']);
+  });
+
+  it('questions : même décompte que le classique', () => {
+    game.mode = 'questions';
+    game.start();
+    game.startTurn();
+    game.answer(true);
+    game.answer(false);
+    game.endTurn();
+    expect(game.currentPlayer.score).toBe(1);
+  });
+
+  it('sans pitié : chaque carte passée coûte un point, sans descendre sous zéro', () => {
+    game.mode = 'malus';
+    game.start();
+    game.startTurn();
+    game.answer(true);
+    game.answer(true);
+    game.answer(true);
+    game.answer(false);
+    expect(game.turnPoints).toBe(2);
+    game.endTurn();
+    expect(game.currentPlayer.score).toBe(2);
+    game.nextTurn();
+    game.startTurn();
+    game.answer(false);
+    game.answer(false);
+    game.endTurn();
+    expect(game.currentPlayer.score).toBe(0);
   });
 });

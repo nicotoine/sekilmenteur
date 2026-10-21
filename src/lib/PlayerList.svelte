@@ -3,9 +3,9 @@
   import Avatar from './Avatar.svelte';
 </script>
 
-<section class="mb-6">
-  <h2 class="mb-3 text-xl font-bold">Joueurs <span class="text-base-content/60">({roster.filled.length})</span></h2>
-  <div class="flex flex-col gap-2">
+<section class="mb-4">
+  <h2 class="mb-2 text-xl font-bold">Joueurs <span class="text-base-content/60">({roster.filled.length})</span></h2>
+  <div class="flex flex-col gap-1.5">
     {#each roster.names as _, i}
       <div class="flex items-center gap-2">
         <Avatar name={roster.names[i]} index={i} />
@@ -26,7 +26,7 @@
       </div>
     {/each}
   </div>
-  <button class="btn btn-outline btn-block mt-3 h-12" disabled={roster.names.length >= MAX_PLAYERS} onclick={() => roster.add()}>
+  <button class="btn btn-outline btn-block mt-2 h-11" disabled={roster.names.length >= MAX_PLAYERS} onclick={() => roster.add()}>
     Ajouter un joueur
   </button>
   {#if roster.hasDuplicates}

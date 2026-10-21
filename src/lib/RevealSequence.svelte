@@ -34,7 +34,7 @@
   <progress class="progress progress-secondary mx-auto mt-2 w-40" value={index + (shown ? 1 : 0)} max={names.length}></progress>
 </header>
 
-<div class="flip mx-auto h-[26rem] w-full max-w-xs" class:is-flipped={shown}>
+<div class="flip mx-auto h-[min(26rem,58dvh)] min-h-72 w-full max-w-xs" class:is-flipped={shown}>
   <div class="flip-inner h-full w-full">
     <button class="flip-face card-pattern text-white" aria-hidden={shown} tabindex={shown ? -1 : 0} onclick={() => (shown = true)}>
       <span class="text-sm opacity-80">Cette carte est pour</span>

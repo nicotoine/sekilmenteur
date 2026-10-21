@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import { game, CLUE_ROUNDS } from '../src/games/sekilmenteur/state.svelte.js';
+import { game, CLUE_ROUNDS, MODES } from '../src/games/sekilmenteur/state.svelte.js';
 import { setPlayers } from './helpers.js';
 
 const liars = () => game.players.filter((p) => p.isLiar);
@@ -9,6 +9,8 @@ beforeEach(() => {
   game.reset();
   game.liarCount = 1;
   game.hintMode = true;
+  game.mode = 'classique';
+  game.clueRounds = CLUE_ROUNDS;
   setPlayers(5);
 });
 
@@ -99,5 +101,216 @@ describe('déroulé', () => {
     expect(game.players.map((p) => p.name)).toEqual(['J1', 'J2', 'J3', 'J4', 'J5']);
     expect(game.players.every((p) => p.alive)).toBe(true);
     expect(game.outcome).toBeNull();
+  });
+});
+
+describe('tours de parole réglables', () => {
+  it.each([1, 2, 3])('vote après %i tour(s)', (rounds) => {
+    game.clueRounds = rounds;
+    game.start();
+    game.beginClues();
+    for (let i = 1; i < rounds; i++) {
+      game.endClueRound();
+      expect(game.phase).toBe('clues');
+    }
+    game.endClueRound();
+    expect(game.phase).toBe('vote');
+  });
+
+  it('repart du tour 1 après une élimination', () => {
+    setPlayers(7);
+    game.clueRounds = 3;
+    game.liarCount = 2;
+    game.start();
+    game.beginClues();
+    game.endClueRound();
+    game.endClueRound();
+    game.endClueRound();
+    game.accuse(innocents()[0]);
+    game.continueAfterResult();
+    expect(game.clueRound).toBe(1);
+  });
+});
+
+describe('mode classique', () => {
+  it('ne donne aucune seconde chance au menteur démasqué', () => {
+    game.liarCount = 2;
+    game.start();
+    game.accuse(liars()[0]);
+    expect(game.accusedMayGuess).toBe(false);
+    game.continueAfterResult();
+    expect(game.phase).toBe('clues');
+  });
+
+  it('ne permet pas de se dévoiler', () => {
+    game.start();
+    game.beginClues();
+    expect(game.canSpyGuess).toBe(false);
+    game.startSpyGuess();
+    expect(game.phase).toBe('clues');
+  });
+});
+
+describe('mode dernière chance', () => {
+  beforeEach(() => {
+    game.mode = 'derniere-chance';
+  });
+
+  it('propose au menteur démasqué de deviner le mot', () => {
+    game.start();
+    game.accuse(liars()[0]);
+    expect(game.outcome).toBe('win');
+    expect(game.accusedMayGuess).toBe(true);
+    game.continueAfterResult();
+    expect(game.phase).toBe('guess');
+    expect(game.guesser).toBe(game.accused);
+  });
+
+  it('les menteurs gagnent si le mot est deviné', () => {
+    game.start();
+    game.accuse(liars()[0]);
+    game.continueAfterResult();
+    game.resolveGuess(true);
+    expect(game.outcome).toBe('lose');
+    expect(game.endReason).toBe('guessed');
+    expect(game.phase).toBe('end');
+  });
+
+  it('la partie reprend son cours si le menteur se trompe', () => {
+    game.liarCount = 2;
+    game.start();
+    game.accuse(liars()[0]);
+    game.continueAfterResult();
+    game.resolveGuess(false);
+    expect(game.outcome).toBeNull();
+    expect(game.phase).toBe('clues');
+    expect(game.alivePlayers).toHaveLength(4);
+  });
+
+  it('les honnêtes gagnent si le dernier menteur se trompe', () => {
+    game.start();
+    game.accuse(liars()[0]);
+    game.continueAfterResult();
+    game.resolveGuess(false);
+    expect(game.outcome).toBe('win');
+    expect(game.phase).toBe('end');
+  });
+
+  it('un honnête éliminé ne devine rien', () => {
+    game.liarCount = 2;
+    setPlayers(7);
+    game.start();
+    game.accuse(innocents()[0]);
+    expect(game.accusedMayGuess).toBe(false);
+    game.continueAfterResult();
+    expect(game.phase).toBe('clues');
+  });
+
+  it('pas de dernière chance quand les menteurs ont déjà gagné', () => {
+    game.liarCount = 2;
+    game.start();
+    game.accuse(innocents()[0]);
+    expect(game.outcome).toBe('lose');
+    expect(game.accusedMayGuess).toBe(false);
+    game.continueAfterResult();
+    expect(game.phase).toBe('end');
+  });
+
+  it('ignore une réponse hors phase de devinette', () => {
+    game.start();
+    game.resolveGuess(true);
+    expect(game.phase).toBe('reveal');
+    expect(game.outcome).toBeNull();
+  });
+});
+
+describe('mode espion', () => {
+  beforeEach(() => {
+    game.mode = 'espion';
+  });
+
+  it('permet de se dévoiler pendant les tours de parole et le vote', () => {
+    game.start();
+    expect(game.canSpyGuess).toBe(false);
+    game.beginClues();
+    expect(game.canSpyGuess).toBe(true);
+    game.endClueRound();
+    game.endClueRound();
+    expect(game.phase).toBe('vote');
+    expect(game.canSpyGuess).toBe(true);
+  });
+
+  it('les menteurs gagnent si le menteur dévoilé trouve le mot', () => {
+    game.start();
+    game.beginClues();
+    game.startSpyGuess();
+    expect(game.phase).toBe('spyGuess');
+    game.resolveSpyGuess(liars()[0], true);
+    expect(game.outcome).toBe('lose');
+    expect(game.endReason).toBe('guessed');
+    expect(game.guesser).toBe(liars()[0]);
+    expect(game.phase).toBe('end');
+  });
+
+  it('un menteur qui se trompe est éliminé', () => {
+    game.liarCount = 2;
+    game.start();
+    game.beginClues();
+    game.startSpyGuess();
+    const spy = liars()[0];
+    game.resolveSpyGuess(spy, false);
+    expect(spy.alive).toBe(false);
+    expect(game.phase).toBe('result');
+    expect(game.outcome).toBeNull();
+    game.continueAfterResult();
+    expect(game.phase).toBe('clues');
+  });
+
+  it('le dernier menteur qui se trompe fait gagner les honnêtes', () => {
+    game.start();
+    game.beginClues();
+    game.startSpyGuess();
+    game.resolveSpyGuess(liars()[0], false);
+    expect(game.outcome).toBe('win');
+  });
+
+  it('un honnête qui bluffe est éliminé, même s\'il connaît le mot', () => {
+    game.liarCount = 2;
+    setPlayers(7);
+    game.start();
+    game.beginClues();
+    game.startSpyGuess();
+    const bluffer = innocents()[0];
+    game.resolveSpyGuess(bluffer, true);
+    expect(bluffer.alive).toBe(false);
+    expect(game.outcome).toBeNull();
+    expect(game.phase).toBe('result');
+  });
+
+  it('annuler revient à la phase en cours', () => {
+    game.start();
+    game.beginClues();
+    game.startSpyGuess();
+    game.cancelSpyGuess();
+    expect(game.phase).toBe('clues');
+    game.endClueRound();
+    game.endClueRound();
+    game.startSpyGuess();
+    game.cancelSpyGuess();
+    expect(game.phase).toBe('vote');
+  });
+
+  it('le menteur démasqué par vote n\'a pas de seconde chance', () => {
+    game.liarCount = 2;
+    game.start();
+    game.accuse(liars()[0]);
+    expect(game.accusedMayGuess).toBe(false);
+  });
+});
+
+describe('modes', () => {
+  it('propose trois modes aux identifiants uniques', () => {
+    expect(MODES.map((m) => m.id)).toEqual(['classique', 'derniere-chance', 'espion']);
+    expect(game.currentMode.id).toBe('classique');
   });
 });
