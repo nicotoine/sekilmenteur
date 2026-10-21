@@ -344,3 +344,87 @@ describe('modes', () => {
     expect(game.nightNumber).toBe(0);
   });
 });
+
+describe('narrateur', () => {
+  it('se tait sur les écrans secrets : cartes de rôle et actions de nuit', () => {
+    expect(game.announcement).toBeNull();
+    game.start();
+    expect(game.announcement).toBeNull();
+    game.beginNight();
+    expect(game.announcement).toBe(`Nuit 1. Le village s'endort. Passe le téléphone à ${game.nightPlayer.name}.`);
+    game.uncover();
+    expect(game.announcement).toBeNull();
+    game.chooseVictim(game.alivePlayers.find((p) => p.role === 'villageois'));
+    game.nextSleeper();
+    expect(game.announcement).toBe(`Passe le téléphone à ${game.nightPlayer.name}.`);
+  });
+
+  it('annonce l\'aube, le débat, l\'élimination et la fin avec les rôles révélés', () => {
+    game.start();
+    game.beginNight();
+    const victim = game.alivePlayers.find((p) => p.role === 'villageois');
+    runNight({ victim });
+    expect(game.announcement).toBe(`Le village se réveille. Cette nuit, ${victim.name}, qui était Villageois, est mort.`);
+    game.afterDawn();
+    expect(game.announcement).toBe('Le village débat. Désignez ensemble un joueur à éliminer.');
+    const wolf = alive('loup');
+    game.lynch(wolf);
+    expect(game.announcement).toBe(`${wolf.name}, qui était Loup-Garou, est éliminé. La nuit tombe.`);
+    game.afterDayResult();
+    expect(game.announcement).toBe('Tous les loups-garous sont éliminés. Le village gagne.');
+  });
+
+  it('annonce une nuit sans mort, et deux morts', () => {
+    game.start();
+    game.beginNight();
+    runNight({ victim: game.alivePlayers.find((p) => p.role === 'villageois'), heal: true });
+    expect(game.announcement).toBe('Le village se réveille. Personne n\'est mort cette nuit.');
+    game.afterDawn();
+    game.lynch(game.alivePlayers.find((p) => p.role === 'villageois'));
+    game.afterDayResult();
+    const [v1, v2] = game.alivePlayers.filter((p) => p.role === 'villageois');
+    runNight({ victim: v1, poison: v2 });
+    expect(game.announcement).toMatch(/Cette nuit, .+ et .+ sont morts\./);
+  });
+
+  it('mystère : les annonces ne citent jamais les rôles', () => {
+    game.mode = 'mystere';
+    game.start();
+    game.beginNight();
+    const victim = game.alivePlayers.find((p) => p.role === 'villageois');
+    runNight({ victim });
+    expect(game.announcement).toBe(`Le village se réveille. Cette nuit, ${victim.name} est mort.`);
+    game.afterDawn();
+    const wolf = alive('loup');
+    game.lynch(wolf);
+    expect(game.announcement).toBe(`${wolf.name} est éliminé. La nuit tombe.`);
+    expect(game.announcement).not.toMatch(/Loup-Garou/);
+  });
+
+  it('annonce le chasseur et sa cible, puis la victoire des loups', () => {
+    setPlayers(4);
+    game.roles = { voyante: false, sorciere: false, chasseur: true };
+    game.start();
+    game.beginNight();
+    const hunter = alive('chasseur');
+    runNight({ victim: hunter });
+    game.afterDawn();
+    expect(game.announcement).toBe(`${hunter.name} était le chasseur. Dans un dernier souffle, il tire sur un joueur.`);
+    const target = game.alivePlayers.find((p) => p.role === 'villageois');
+    game.shoot(target);
+    expect(game.announcement).toBe(`${target.name}, qui était Villageois, est mort.`);
+    game.afterHunterShot();
+    expect(game.phase).toBe('end');
+    expect(game.announcement).toBe('Les loups-garous sont aussi nombreux que les villageois. Les loups-garous gagnent.');
+  });
+
+  it('mémorise le narrateur et la voix avec les réglages', () => {
+    localStorage.clear();
+    game.narrator = true;
+    game.voiceURI = 'fr1';
+    game.start();
+    expect(JSON.parse(localStorage.getItem('loupgarou:settings'))).toMatchObject({ narrator: true, voiceURI: 'fr1' });
+    game.narrator = false;
+    game.voiceURI = '';
+  });
+});

@@ -48,6 +48,8 @@ class LoupGarou {
   mode = $state('classique');
   wolfCount = $state(1);
   roles = $state({ voyante: true, sorciere: true, chasseur: false });
+  narrator = $state(false);
+  voiceURI = $state('');
 
   players = $state([]); // { name, role, alive }
   nightNumber = $state(0);
@@ -66,6 +68,8 @@ class LoupGarou {
     if (saved.roles && typeof saved.roles === 'object') {
       for (const id of OPTIONAL_ROLES) if (typeof saved.roles[id] === 'boolean') this.roles[id] = saved.roles[id];
     }
+    if (typeof saved.narrator === 'boolean') this.narrator = saved.narrator;
+    if (typeof saved.voiceURI === 'string') this.voiceURI = saved.voiceURI;
     this.mode = validMode(MODES, saved.mode);
   }
 
@@ -117,13 +121,47 @@ class LoupGarou {
   roleOf(player) {
     return ROLES[player.role];
   }
+  /** « Bob, qui était Villageois » si les rôles sont révélés, sinon juste le nom. */
+  named(player) {
+    return this.revealRoles ? `${player.name}, qui était ${this.roleOf(player).name},` : player.name;
+  }
+
+  /**
+   * Texte que le narrateur lit pour l'écran en cours. Toujours null sur les
+   * écrans secrets (cartes de rôle, actions de nuit) : la voix ne révèle rien.
+   */
+  get announcement() {
+    switch (this.phase) {
+      case 'night': {
+        if (!this.night || this.night.uncovered) return null;
+        const intro = this.night.index === 0 ? `Nuit ${this.nightNumber}. Le village s'endort. ` : '';
+        return `${intro}Passe le téléphone à ${this.nightPlayer.name}.`;
+      }
+      case 'dawn': {
+        if (this.deaths.length === 0) return 'Le village se réveille. Personne n\'est mort cette nuit.';
+        const list = this.deaths.map((p) => this.named(p));
+        return `Le village se réveille. Cette nuit, ${list.join(' et ')} ${this.deaths.length > 1 ? 'sont morts' : 'est mort'}.`;
+      }
+      case 'hunter':
+        if (this.hunterTarget) return `${this.named(this.hunterTarget)} est mort.`;
+        return `${this.hunterPending.name} était le chasseur. Dans un dernier souffle, il tire sur un joueur.`;
+      case 'day':
+        return 'Le village débat. Désignez ensemble un joueur à éliminer.';
+      case 'dayResult':
+        return `${this.named(this.lynched)} est éliminé. La nuit tombe.`;
+      case 'end':
+        return this.outcome === 'village' ? 'Tous les loups-garous sont éliminés. Le village gagne.' : 'Les loups-garous sont aussi nombreux que les villageois. Les loups-garous gagnent.';
+      default:
+        return null;
+    }
+  }
   accomplices(player) {
     return this.players.filter((p) => p.role === 'loup' && p !== player);
   }
 
   start() {
     if (!this.canStart) return;
-    saveSettings(STORAGE_KEY, { wolfCount: this.wolfCount, roles: { ...this.roles }, mode: this.mode });
+    saveSettings(STORAGE_KEY, { wolfCount: this.wolfCount, roles: { ...this.roles }, mode: this.mode, narrator: this.narrator, voiceURI: this.voiceURI });
     const names = roster.filled;
     const deck = [...Array(this.effectiveWolfCount).fill('loup'), ...this.specialRoles];
     while (deck.length < names.length) deck.push('villageois');

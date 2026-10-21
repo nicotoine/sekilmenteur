@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/svelte';
 import App from '../src/App.svelte';
 import { games, groups } from '../src/games/registry.js';
@@ -454,5 +454,81 @@ describe('Je n\'ai jamais dans l\'interface', () => {
     await fireEvent.click(await screen.findByRole('button', { name: /Alice/ }));
     await fireEvent.click(button(/Carte suivante \(1 coupable\)/));
     await waitFor(() => expect(jamais.players[0].lives).toBe(9));
+  });
+});
+
+describe('narrateur de Loupiétu', () => {
+  function installSpeech() {
+    const synth = { speak: vi.fn(), cancel: vi.fn(), getVoices: () => [{ name: 'Amélie', lang: 'fr-FR', voiceURI: 'fr1' }], addEventListener: vi.fn(), removeEventListener: vi.fn() };
+    globalThis.speechSynthesis = synth;
+    globalThis.SpeechSynthesisUtterance = class {
+      constructor(text) {
+        this.text = text;
+      }
+    };
+    return synth;
+  }
+  const spoken = (synth) => synth.speak.mock.calls.map((c) => c[0].text);
+
+  afterEach(() => {
+    loupgarou.narrator = false;
+    delete globalThis.speechSynthesis;
+    delete globalThis.SpeechSynthesisUtterance;
+  });
+
+  async function prepare() {
+    render(App);
+    await open('loupgarou');
+    await screen.findByRole('button', { name: 'Lancer la partie' });
+    roster.names = ['Alice', 'Bob', 'Chloé', 'Dan', 'Eve', 'Fred'];
+    loupgarou.roles = { voyante: false, sorciere: false, chasseur: false };
+  }
+
+  it('est désactivé sans synthèse vocale', async () => {
+    await prepare();
+    expect(screen.getByText('🔇 Désactivé')).toBeInTheDocument();
+    expect(screen.getByRole('checkbox', { name: /Narrateur vocal/ })).toBeDisabled();
+    expect(screen.getByText(/n'est pas disponible/)).toBeInTheDocument();
+  });
+
+  it('raconte les écrans publics et se tait sur les écrans secrets', async () => {
+    const synth = installSpeech();
+    await prepare();
+    await fireEvent.click(screen.getByRole('checkbox', { name: /Narrateur vocal/ }));
+    expect(loupgarou.narrator).toBe(true);
+    expect(screen.getByText('🔊 Activé')).toBeInTheDocument();
+    expect(screen.getByRole('option', { name: 'Amélie' })).toBeInTheDocument();
+    await fireEvent.click(button('Tester la voix'));
+    expect(spoken(synth).at(-1)).toMatch(/Passe le téléphone à ton voisin/);
+    synth.speak.mockClear();
+
+    loupgarou.start();
+    loupgarou.beginNight();
+    await waitFor(() => expect(spoken(synth).at(-1)).toBe(`Nuit 1. Le village s'endort. Passe le téléphone à ${loupgarou.nightPlayer.name}.`));
+
+    const victim = loupgarou.alivePlayers.find((p) => p.role === 'villageois');
+    while (loupgarou.phase === 'night') {
+      loupgarou.uncover();
+      await sleep(0);
+      const before = synth.speak.mock.calls.length;
+      if (loupgarou.nightPlayer.role === 'loup') loupgarou.chooseVictim(victim);
+      await sleep(0);
+      expect(synth.speak.mock.calls.length).toBe(before);
+      loupgarou.nextSleeper();
+      await sleep(0);
+    }
+    expect(spoken(synth).some((t) => /loup/i.test(t))).toBe(false);
+    await waitFor(() => expect(spoken(synth).at(-1)).toBe(`Le village se réveille. Cette nuit, ${victim.name}, qui était Villageois, est mort.`));
+    await fireEvent.click(button('Continuer'));
+    await waitFor(() => expect(spoken(synth).at(-1)).toMatch(/Le village débat/));
+  });
+
+  it('ne parle jamais quand le narrateur est désactivé', async () => {
+    const synth = installSpeech();
+    await prepare();
+    loupgarou.start();
+    loupgarou.beginNight();
+    await sleep(0);
+    expect(synth.speak).not.toHaveBeenCalled();
   });
 });

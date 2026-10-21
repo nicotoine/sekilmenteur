@@ -8,8 +8,23 @@
   import RevealSequence from '../../lib/RevealSequence.svelte';
   import Avatar from '../../lib/Avatar.svelte';
   import PlayerGrid from '../../lib/PlayerGrid.svelte';
+  import { onDestroy, untrack } from 'svelte';
+  import { speechAvailable, frenchVoices, onVoicesChanged, speak, stopSpeaking } from '../../lib/speech.js';
 
   let selected = $state(null);
+
+  // Narrateur : lit chaque annonce publique quand elle change, jamais les écrans secrets.
+  let voices = $state(frenchVoices());
+  const stopWatching = onVoicesChanged(() => (voices = frenchVoices()));
+  $effect(() => {
+    const text = game.narrator ? game.announcement : null;
+    if (text) speak(text, { voiceURI: untrack(() => game.voiceURI) });
+    else stopSpeaking();
+  });
+  onDestroy(() => {
+    stopWatching();
+    stopSpeaking();
+  });
 
   const playerIndex = (player) => game.players.indexOf(player);
   const names = (list) => list.map((p) => p.name).join(', ');
@@ -69,6 +84,31 @@
       {/each}
       {#if tooManyRoles}
         <p class="mt-3 text-sm text-error">Trop de rôles pour {game.playerCount} joueurs : retire un rôle ou un loup.</p>
+      {/if}
+    </Section>
+
+    <Section title="Narrateur" summary={game.narrator ? '🔊 Activé' : '🔇 Désactivé'}>
+      <label class="flex cursor-pointer items-center justify-between gap-4">
+        <span>
+          <span class="block font-bold">🔊 Narrateur vocal</span>
+          <span class="block text-sm text-base-content/70">Le téléphone raconte la partie à voix haute : le village s'endort, qui prend le téléphone, qui est mort. Les écrans secrets restent muets.</span>
+        </span>
+        <input type="checkbox" class="toggle toggle-secondary toggle-lg" disabled={!speechAvailable()} bind:checked={game.narrator} />
+      </label>
+      {#if !speechAvailable()}
+        <p class="mt-3 text-sm text-error">La synthèse vocale n'est pas disponible sur cet appareil.</p>
+      {:else if game.narrator}
+        <div class="divider my-3"></div>
+        <label class="flex flex-col gap-2">
+          <span class="font-bold">Voix</span>
+          <select class="select w-full" bind:value={game.voiceURI}>
+            <option value="">Automatique{voices.length ? '' : ' (aucune voix française trouvée)'}</option>
+            {#each voices as voice}
+              <option value={voice.voiceURI}>{voice.name}</option>
+            {/each}
+          </select>
+        </label>
+        <button class="btn btn-outline btn-block mt-3 h-11" onclick={() => speak('Le village s\'endort. Passe le téléphone à ton voisin.', { voiceURI: game.voiceURI })}>Tester la voix</button>
       {/if}
     </Section>
 
