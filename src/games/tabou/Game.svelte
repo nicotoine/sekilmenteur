@@ -10,6 +10,7 @@
   import TeamNames from '../../lib/TeamNames.svelte';
   import Scoreboard from '../../lib/Scoreboard.svelte';
   import Timer from '../../lib/Timer.svelte';
+  import ConfirmButton from '../../lib/ConfirmButton.svelte';
 
   const durations = [30, 45, 60, 90, 120];
   const turnCounts = [1, 2, 3, 5];
@@ -82,7 +83,7 @@
         <button class="btn btn-error h-14 text-lg" onclick={() => game.answer('taboo')}>Tabou ({signed(game.points.taboo)})</button>
         <button class="btn btn-neutral h-14 text-lg" onclick={() => game.answer('skip')}>Passer</button>
       </div>
-      <button class="btn btn-ghost btn-sm" onclick={() => game.endTurn()}>Terminer le tour</button>
+      <ConfirmButton class="btn btn-ghost btn-sm" question="Terminer le tour ?" detail="Le chrono s'arrête et on passe au résumé du tour." confirmLabel="Terminer" onConfirm={() => game.endTurn()}>Terminer le tour</ConfirmButton>
     </div>
   {:else if game.phase === 'summary'}
     <header class="py-4 text-center">

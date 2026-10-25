@@ -9,6 +9,7 @@
   import Choice from '../../lib/Choice.svelte';
   import HowTo from '../../lib/HowTo.svelte';
   import Avatar from '../../lib/Avatar.svelte';
+  import ConfirmButton from '../../lib/ConfirmButton.svelte';
 
   const playerIndex = (player) => game.players.indexOf(player);
 </script>
@@ -64,7 +65,7 @@
       <button class="btn btn-primary btn-block h-14 text-lg" onclick={() => game.next()}>
         {game.tracked && game.marked.length > 0 ? `Carte suivante (${game.marked.length} coupable${game.marked.length > 1 ? 's' : ''})` : 'Carte suivante'}
       </button>
-      <button class="btn btn-ghost btn-sm" onclick={() => game.finish()}>Terminer la partie</button>
+      <ConfirmButton class="btn btn-ghost btn-sm" question="Terminer la partie ?" detail="On passe directement au bilan." confirmLabel="Terminer" onConfirm={() => game.finish()}>Terminer la partie</ConfirmButton>
     </div>
   {:else if game.phase === 'end'}
     <header class="py-4 text-center">

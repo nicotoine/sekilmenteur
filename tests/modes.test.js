@@ -127,6 +127,7 @@ describe('les modes se combinent avec les autres réglages', () => {
     game.mode = 'strict';
     game.turnsPerTeam = 1;
     game.start();
+    game.firstTeam = 0;
     game.startTurn();
     game.answer('taboo');
     expect(game.phase).toBe('summary');

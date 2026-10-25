@@ -11,6 +11,7 @@
   import Timer from '../../lib/Timer.svelte';
   import Countdown from '../../lib/Countdown.svelte';
   import Avatar from '../../lib/Avatar.svelte';
+  import ConfirmButton from '../../lib/ConfirmButton.svelte';
 
   const durations = [30, 45, 60, 90];
   const lapCounts = [1, 2, 3];
@@ -87,7 +88,7 @@
           <button class="btn btn-success col-span-2 h-16 text-xl landscape:order-first landscape:col-span-1" onclick={() => answer(true)}>Trouvé</button>
           <button class="btn btn-neutral h-16 text-lg" onclick={() => answer(false)}>Passer</button>
         </div>
-        <button class="btn btn-ghost btn-sm" onclick={() => game.endTurn()}>Terminer le tour</button>
+        <ConfirmButton class="btn btn-ghost btn-sm" question="Terminer le tour ?" detail="Le chrono s'arrête et on passe au résumé du tour." confirmLabel="Terminer" onConfirm={() => game.endTurn()}>Terminer le tour</ConfirmButton>
       </div>
     </div>
   {:else if game.phase === 'summary'}

@@ -130,7 +130,7 @@ describe('modes time\'s up', () => {
 
   it('express : la partie finit après deux manches, les scores ont deux colonnes', () => {
     game.mode = 'express';
-    game.start();
+    start();
     expect(game.scores).toEqual([[0, 0], [0, 0]]);
     expect(game.rounds.map((r) => r.title)).toEqual(['Décris librement', 'Mime']);
     for (let round = 1; round <= 2; round++) {
@@ -144,7 +144,7 @@ describe('modes time\'s up', () => {
 
   it('expert : quatre manches, la dernière est une pose', () => {
     game.mode = 'expert';
-    game.start();
+    start();
     expect(game.scores[0]).toHaveLength(4);
     expect(game.rounds.at(-1).title).toBe('Une pose');
     for (let round = 1; round <= 3; round++) {

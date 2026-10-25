@@ -108,7 +108,7 @@ describe('modes tabou', () => {
 
   it('strict : un tabou coûte 1 point et termine le tour', () => {
     game.mode = 'strict';
-    game.start();
+    start();
     game.startTurn();
     game.answer('found');
     game.answer('taboo');
@@ -121,7 +121,7 @@ describe('modes tabou', () => {
 
   it('doux : un tabou ne coûte rien et le tour continue', () => {
     game.mode = 'doux';
-    game.start();
+    start();
     game.startTurn();
     const first = game.card.word;
     game.answer('taboo');
@@ -135,7 +135,7 @@ describe('modes tabou', () => {
   });
 
   it('classique : un tabou coûte 1 point sans arrêter le tour', () => {
-    game.start();
+    start();
     playTurn('taboo', 'found');
     expect(game.scores).toEqual([0, 0]);
     expect(game.currentMode.tabooEndsTurn).toBe(false);

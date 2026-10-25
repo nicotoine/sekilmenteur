@@ -236,12 +236,30 @@ describe('Tabou dans l\'interface', () => {
     await fireEvent.click(button(/^Trouvé/));
     await fireEvent.click(button(/^Tabou/));
     await fireEvent.click(button(/Terminer le tour/));
+    await fireEvent.click(button('Terminer'));
     await waitFor(() => expect(screen.getByRole('heading', { name: `${tabou.currentTeam} : 0` })).toBeInTheDocument());
     expect(screen.getByText('Trouvé')).toBeInTheDocument();
   });
 });
 
 describe('Time\'s Up dans l\'interface', () => {
+  it('demande confirmation avant de terminer le tour', async () => {
+    render(App);
+    await open('timesup');
+    await fireEvent.click(await screen.findByRole('button', { name: 'Lancer la partie' }));
+    await fireEvent.click(await screen.findByRole('button', { name: /Démarrer le chrono/ }));
+
+    await fireEvent.click(button('Terminer le tour'));
+    expect(screen.getByRole('dialog', { name: 'Terminer le tour ?' })).toBeInTheDocument();
+    await fireEvent.click(screen.getAllByRole('button', { name: 'Annuler' })[0]);
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    expect(timesup.phase).toBe('turn');
+
+    await fireEvent.click(button('Terminer le tour'));
+    await fireEvent.click(button('Terminer'));
+    expect(timesup.phase).toBe('summary');
+  });
+
   it('fait trouver des cartes et affiche le résumé du tour', async () => {
     render(App);
     await open('timesup');
@@ -252,6 +270,7 @@ describe('Time\'s Up dans l\'interface', () => {
     await fireEvent.click(button('Trouvé'));
     await fireEvent.click(button('Trouvé'));
     await fireEvent.click(button('Terminer le tour'));
+    await fireEvent.click(button('Terminer'));
     const [first, second] = timesup.teamIndex === 0 ? ['Équipe 1', 'Équipe 2'] : ['Équipe 2', 'Équipe 1'];
     await waitFor(() => expect(screen.getByRole('heading', { name: `${first} : +2` })).toBeInTheDocument());
     await fireEvent.click(button('Équipe suivante'));
@@ -271,6 +290,7 @@ describe('Qui suis-je dans l\'interface', () => {
     expect(screen.getByText(quisuisje.card)).toBeInTheDocument();
     await fireEvent.click(button('Trouvé'));
     await fireEvent.click(button('Terminer le tour'));
+    await fireEvent.click(button('Terminer'));
     await waitFor(() => expect(screen.getByRole('heading', { name: `${quisuisje.currentPlayer.name} : +1` })).toBeInTheDocument());
   });
 });
@@ -411,6 +431,7 @@ describe('Action ou Vérité dans l\'interface', () => {
     await fireEvent.click(button(/Action/));
     await fireEvent.click(button(/Dégonflé/));
     await fireEvent.click(await screen.findByRole('button', { name: 'Terminer la partie' }));
+    await fireEvent.click(button('Terminer'));
     await waitFor(() => expect(screen.getByText(/Bob s'est dégonflé 1 fois/)).toBeInTheDocument());
   });
 

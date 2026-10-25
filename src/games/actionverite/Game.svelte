@@ -7,6 +7,7 @@
   import ModePicker from '../../lib/ModePicker.svelte';
   import HowTo from '../../lib/HowTo.svelte';
   import Avatar from '../../lib/Avatar.svelte';
+  import ConfirmButton from '../../lib/ConfirmButton.svelte';
 
   const playerIndex = () => game.turnIndex % game.players.length;
 </script>
@@ -46,7 +47,7 @@
           {/each}
         </div>
       {/if}
-      <button class="btn btn-ghost btn-sm" onclick={() => game.finish()}>Terminer la partie</button>
+      <ConfirmButton class="btn btn-ghost btn-sm" question="Terminer la partie ?" detail="On passe directement au bilan." confirmLabel="Terminer" onConfirm={() => game.finish()}>Terminer la partie</ConfirmButton>
     </div>
   {:else if game.phase === 'card'}
     <header class="py-3 text-center">
