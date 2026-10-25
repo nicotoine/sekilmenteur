@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest';
+import { liarThemes, tabooThemes, pairThemes, wordThemes } from '../src/lib/themeBank.js';
 
 const load = (glob) => Object.entries(glob).map(([path, theme]) => ({ path, theme }));
+const derived = (themes) => themes.map((theme) => ({ path: theme.id, theme }));
 
-const sekilmenteur = load(import.meta.glob('../src/games/sekilmenteur/themes/*.json', { eager: true, import: 'default' }));
-const undercover = load(import.meta.glob('../src/games/undercover/themes/*.json', { eager: true, import: 'default' }));
-const tabou = load(import.meta.glob('../src/games/tabou/themes/*.json', { eager: true, import: 'default' }));
+const shared = load(import.meta.glob('../src/themes/*.json', { eager: true, import: 'default' }));
 const petitbac = load(import.meta.glob('../src/games/petitbac/themes/*.json', { eager: true, import: 'default' }));
 const actionverite = load(import.meta.glob('../src/games/actionverite/themes/*.json', { eager: true, import: 'default' }));
 const jamais = load(import.meta.glob('../src/games/jamais/themes/*.json', { eager: true, import: 'default' }));
@@ -12,9 +12,10 @@ const jamais = load(import.meta.glob('../src/games/jamais/themes/*.json', { eage
 const lower = (s) => s.trim().toLowerCase();
 
 describe.each([
-  ['sekilmenteur', sekilmenteur, 'words', 30, 20],
-  ['undercover', undercover, 'pairs', 30, 13],
-  ['tabou', tabou, 'cards', 30, 12],
+  ['sekilmenteur', derived(liarThemes), 'words', 30, 20],
+  ['undercover', derived(pairThemes), 'pairs', 30, 13],
+  ['tabou', derived(tabooThemes), 'cards', 30, 12],
+  ['time\'s up', derived(wordThemes), 'words', 30, 20],
   ['petitbac', petitbac, 'categories', 10, 4],
   ['actionverite', actionverite, 'truths', 25, 3],
   ['jamais', jamais, 'statements', 30, 4],
@@ -37,36 +38,29 @@ describe.each([
   });
 });
 
-describe('thèmes sekilmenteur', () => {
-  it.each(sekilmenteur.map((t) => [t.theme.id, t.theme]))('%s : mots et indices sans doublon', (_id, theme) => {
+describe('banque de thèmes commune', () => {
+  it('ne réserve les thèmes adultes qu\'à Sékilmenteur', () => {
+    for (const themes of [tabooThemes, pairThemes, wordThemes]) expect(themes.some((t) => t.adult)).toBe(false);
+    expect(liarThemes.some((t) => t.adult)).toBe(true);
+  });
+
+  it.each(shared.map((t) => [t.theme.id, t.theme]))('%s : mots uniques, indices et interdits valides', (_id, theme) => {
     for (const entry of theme.words) {
       expect(entry.word.trim()).not.toBe('');
-      expect(entry.hint.trim()).not.toBe('');
+      if ('hint' in entry) expect(entry.hint.trim()).not.toBe('');
+      if ('forbidden' in entry) {
+        expect(entry.forbidden).toHaveLength(5);
+        expect(new Set(entry.forbidden.map(lower)).size).toBe(5);
+        expect(entry.forbidden.map(lower)).not.toContain(lower(entry.word));
+      }
     }
     const words = theme.words.map((e) => lower(e.word));
     expect(new Set(words).size).toBe(words.length);
-  });
-});
-
-describe('thèmes undercover', () => {
-  it.each(undercover.map((t) => [t.theme.id, t.theme]))('%s : paires distinctes', (_id, theme) => {
-    for (const { civil, undercover: other } of theme.pairs) {
+    for (const { civil, undercover } of theme.pairs) {
       expect(civil.trim()).not.toBe('');
-      expect(other.trim()).not.toBe('');
-      expect(lower(civil)).not.toBe(lower(other));
+      expect(undercover.trim()).not.toBe('');
+      expect(lower(civil)).not.toBe(lower(undercover));
     }
-  });
-});
-
-describe('thèmes tabou', () => {
-  it.each(tabou.map((t) => [t.theme.id, t.theme]))('%s : 5 interdits distincts par carte', (_id, theme) => {
-    for (const card of theme.cards) {
-      expect(card.forbidden).toHaveLength(5);
-      expect(new Set(card.forbidden.map(lower)).size).toBe(5);
-      expect(card.forbidden.map(lower)).not.toContain(lower(card.word));
-    }
-    const words = theme.cards.map((c) => lower(c.word));
-    expect(new Set(words).size).toBe(words.length);
   });
 });
 
