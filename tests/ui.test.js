@@ -236,7 +236,7 @@ describe('Tabou dans l\'interface', () => {
     await fireEvent.click(button(/^Trouvé/));
     await fireEvent.click(button(/^Tabou/));
     await fireEvent.click(button(/Terminer le tour/));
-    await waitFor(() => expect(screen.getByRole('heading', { name: 'Équipe 1 : 0' })).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByRole('heading', { name: `${tabou.currentTeam} : 0` })).toBeInTheDocument());
     expect(screen.getByText('Trouvé')).toBeInTheDocument();
   });
 });
@@ -252,9 +252,10 @@ describe('Time\'s Up dans l\'interface', () => {
     await fireEvent.click(button('Trouvé'));
     await fireEvent.click(button('Trouvé'));
     await fireEvent.click(button('Terminer le tour'));
-    await waitFor(() => expect(screen.getByRole('heading', { name: 'Équipe 1 : +2' })).toBeInTheDocument());
+    const [first, second] = timesup.teamIndex === 0 ? ['Équipe 1', 'Équipe 2'] : ['Équipe 2', 'Équipe 1'];
+    await waitFor(() => expect(screen.getByRole('heading', { name: `${first} : +2` })).toBeInTheDocument());
     await fireEvent.click(button('Équipe suivante'));
-    expect(screen.getByText('Au tour de').nextElementSibling).toHaveTextContent('Équipe 2');
+    expect(screen.getByText('Au tour de').nextElementSibling).toHaveTextContent(second);
   });
 });
 
@@ -270,7 +271,7 @@ describe('Qui suis-je dans l\'interface', () => {
     expect(screen.getByText(quisuisje.card)).toBeInTheDocument();
     await fireEvent.click(button('Trouvé'));
     await fireEvent.click(button('Terminer le tour'));
-    await waitFor(() => expect(screen.getByRole('heading', { name: 'Alice : +1' })).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByRole('heading', { name: `${quisuisje.currentPlayer.name} : +1` })).toBeInTheDocument());
   });
 });
 

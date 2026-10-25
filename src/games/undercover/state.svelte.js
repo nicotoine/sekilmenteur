@@ -1,6 +1,6 @@
 import { pickPair, themes, ALL_THEMES } from './themes.js';
 import { roster } from '../../lib/roster.svelte.js';
-import { shuffle } from '../../lib/shuffle.js';
+import { randomIndex, shuffle } from '../../lib/shuffle.js';
 import { loadSettings, saveSettings } from '../../lib/storage.js';
 import { validMode } from '../../lib/themeUtil.js';
 
@@ -96,14 +96,17 @@ class Undercover {
     const byName = new Map(names.map((name, i) => [name, roles[i]]));
     this.players = roster.filled.map((name) => ({ name, role: byName.get(name), alive: true }));
     this.words = pickPair(this.themeId);
-    const starters = this.players.map((p, i) => (p.role === 'white' ? -1 : i)).filter((i) => i >= 0);
-    this.startOffset = starters[Math.floor(Math.random() * starters.length)];
+    this.pickStarter();
     this.outcome = null;
     this.endReason = null;
     this.accused = null;
     this.phase = 'reveal';
   }
 
+  pickStarter() {
+    const starters = this.alivePlayers.map((p, i) => (p.role === 'white' ? -1 : i)).filter((i) => i >= 0);
+    this.startOffset = starters[randomIndex(starters.length)];
+  }
   beginTalk() {
     this.beginRound();
     this.phase = 'talk';
@@ -154,7 +157,7 @@ class Undercover {
       this.phase = 'end';
       return;
     }
-    this.startOffset += 1;
+    this.pickStarter();
     this.beginRound();
     this.phase = 'talk';
   }

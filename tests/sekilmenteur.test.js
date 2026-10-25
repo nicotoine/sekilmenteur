@@ -35,6 +35,16 @@ describe('menteurs', () => {
 });
 
 describe('déroulé', () => {
+  it('tire au sort le premier à parler', () => {
+    const firsts = new Set();
+    for (let i = 0; i < 60; i++) {
+      game.start();
+      game.beginClues();
+      firsts.add(game.speakerOrder[0].name);
+    }
+    expect(firsts.size).toBe(5);
+  });
+
   it('passe de la distribution aux tours de parole', () => {
     game.start();
     expect(game.phase).toBe('reveal');

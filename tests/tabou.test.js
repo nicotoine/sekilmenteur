@@ -8,6 +8,11 @@ beforeEach(() => {
   game.mode = 'classique';
 });
 
+const start = () => {
+  game.start();
+  game.firstTeam = 0;
+};
+
 const playTurn = (...answers) => {
   game.startTurn();
   answers.forEach((a) => game.answer(a));
@@ -15,13 +20,22 @@ const playTurn = (...answers) => {
 };
 
 describe('tabou', () => {
+  it('tire au sort l\'équipe qui commence', () => {
+    const firsts = new Set();
+    for (let i = 0; i < 50; i++) {
+      game.start();
+      firsts.add(game.teamIndex);
+    }
+    expect([...firsts].sort()).toEqual([0, 1]);
+  });
+
   it('donne un nom par défaut aux équipes sans nom', () => {
     game.teamNames = ['Chats', ''];
     expect(game.displayNames).toEqual(['Chats', 'Équipe 2']);
   });
 
   it('alterne les équipes et compte les tours', () => {
-    game.start();
+    start();
     expect(game.totalTurns).toBe(4);
     expect(game.teamIndex).toBe(0);
     playTurn();
@@ -31,7 +45,7 @@ describe('tabou', () => {
   });
 
   it('marque +1 par mot trouvé, -1 par tabou, 0 pour un passé', () => {
-    game.start();
+    start();
     playTurn('found', 'found', 'taboo', 'skip', 'found');
     expect(game.turnPoints).toBe(2);
     expect(game.scores).toEqual([2, 0]);
@@ -39,13 +53,13 @@ describe('tabou', () => {
   });
 
   it('autorise un score négatif', () => {
-    game.start();
+    start();
     playTurn('taboo', 'taboo');
     expect(game.scores[0]).toBe(-2);
   });
 
   it('ne reprend pas deux fois la même carte avant d\'épuiser le paquet', () => {
-    game.start();
+    start();
     game.startTurn();
     const seen = new Set([game.card.word]);
     for (let i = 0; i < 30; i++) {
@@ -56,13 +70,13 @@ describe('tabou', () => {
   });
 
   it('chaque carte a 5 mots interdits', () => {
-    game.start();
+    start();
     game.startTurn();
     expect(game.card.forbidden).toHaveLength(5);
   });
 
   it('ignore les réponses hors tour', () => {
-    game.start();
+    start();
     game.answer('found');
     game.endTurn();
     expect(game.scores).toEqual([0, 0]);
@@ -70,7 +84,7 @@ describe('tabou', () => {
 
   it('termine la partie et désigne le gagnant ou l\'égalité', () => {
     game.turnsPerTeam = 1;
-    game.start();
+    start();
     playTurn('found', 'found');
     game.nextTurn();
     playTurn('found');
@@ -78,7 +92,7 @@ describe('tabou', () => {
     expect(game.phase).toBe('end');
     expect(game.winnerIndex).toBe(0);
 
-    game.start();
+    start();
     playTurn('found');
     game.nextTurn();
     playTurn('found');

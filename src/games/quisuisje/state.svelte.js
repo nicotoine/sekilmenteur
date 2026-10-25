@@ -1,6 +1,7 @@
 import { bankThemes, pickWords } from '../../lib/wordBank.js';
 import { ALL_THEMES, validMode } from '../../lib/themeUtil.js';
 import { roster } from '../../lib/roster.svelte.js';
+import { randomIndex } from '../../lib/shuffle.js';
 import { loadSettings, saveSettings } from '../../lib/storage.js';
 
 const STORAGE_KEY = 'quisuisje:settings';
@@ -42,6 +43,7 @@ class QuiSuisJe {
 
   players = $state([]); // { name, score }
   turnIndex = $state(0);
+  firstIndex = $state(0);
   deck = $state([]);
   card = $state('');
   found = $state([]);
@@ -61,8 +63,11 @@ class QuiSuisJe {
   get canStart() {
     return roster.isValid && themes.length > 0;
   }
+  get currentIndex() {
+    return (this.firstIndex + this.turnIndex) % this.players.length;
+  }
   get currentPlayer() {
-    return this.players[this.turnIndex % this.players.length];
+    return this.players[this.currentIndex];
   }
   get totalTurns() {
     return this.laps * this.players.length;
@@ -81,6 +86,7 @@ class QuiSuisJe {
     this.players = roster.filled.map((name) => ({ name, score: 0 }));
     this.deck = pickWords(themes, this.themeId, DECK_SIZE);
     this.turnIndex = 0;
+    this.firstIndex = randomIndex(this.players.length);
     this.found = [];
     this.passed = [];
     this.phase = 'ready';

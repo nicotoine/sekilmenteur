@@ -10,6 +10,18 @@ beforeEach(() => {
 });
 
 describe('qui suis-je', () => {
+  it('tire au sort le premier joueur puis suit l\'ordre des joueurs', () => {
+    const firsts = new Set();
+    for (let i = 0; i < 60; i++) {
+      game.start();
+      const first = game.currentIndex;
+      firsts.add(first);
+      game.nextTurn();
+      expect(game.currentIndex).toBe((first + 1) % 3);
+    }
+    expect(firsts.size).toBe(3);
+  });
+
   it('ne propose que des thèmes de personnes ou de personnages', () => {
     const ids = themes.map((t) => t.id);
     expect(ids).toContain('celebrites');
@@ -66,6 +78,7 @@ describe('qui suis-je', () => {
   it('fait jouer chacun puis affiche le classement', () => {
     game.laps = 2;
     game.start();
+    game.firstIndex = 0;
     const scores = [3, 1, 2, 1, 1, 1];
     for (const n of scores) {
       game.beginCountdown();

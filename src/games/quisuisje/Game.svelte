@@ -56,7 +56,7 @@
     </header>
 
     <section class="rounded-box bg-base-100 p-6 text-center">
-      <Avatar name={game.currentPlayer.name} index={game.turnIndex % game.players.length} size="size-16" />
+      <Avatar name={game.currentPlayer.name} index={game.currentIndex} size="size-16" />
       <p class="mt-3 text-base-content/70">C'est à</p>
       <p class="my-2 text-4xl font-extrabold text-secondary">{game.currentPlayer.name}</p>
       <p class="mt-4">Mets le téléphone sur ton front, écran vers les autres, sans regarder le mot.</p>

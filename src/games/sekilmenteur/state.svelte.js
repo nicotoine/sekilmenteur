@@ -1,6 +1,6 @@
 import { pickEntry, themes, ALL_THEMES } from './themes.js';
 import { roster } from '../../lib/roster.svelte.js';
-import { shuffle } from '../../lib/shuffle.js';
+import { randomIndex, shuffle } from '../../lib/shuffle.js';
 import { loadSettings, saveSettings } from '../../lib/storage.js';
 import { validMode } from '../../lib/themeUtil.js';
 
@@ -104,7 +104,7 @@ class Game {
     const liarNames = new Set(shuffle(names).slice(0, this.effectiveLiarCount));
     this.players = names.map((name) => ({ name, isLiar: liarNames.has(name), alive: true }));
     this.entry = pickEntry(this.themeId);
-    this.startOffset = Math.floor(Math.random() * this.players.length);
+    this.startOffset = randomIndex(this.players.length);
     this.outcome = null;
     this.endReason = null;
     this.accused = null;
@@ -198,7 +198,7 @@ class Game {
       this.phase = 'end';
       return;
     }
-    this.startOffset += 1;
+    this.startOffset = randomIndex(this.alivePlayers.length);
     this.clueRound = 1;
     this.beginSpeakingRound();
     this.phase = 'clues';

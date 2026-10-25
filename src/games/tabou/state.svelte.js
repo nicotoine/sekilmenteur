@@ -1,4 +1,5 @@
 import { buildDeck, themes, ALL_THEMES } from './themes.js';
+import { randomIndex } from '../../lib/shuffle.js';
 import { loadSettings, saveSettings } from '../../lib/storage.js';
 import { validMode } from '../../lib/themeUtil.js';
 
@@ -42,6 +43,7 @@ class Tabou {
 
   scores = $state([0, 0]);
   turnIndex = $state(0);
+  firstTeam = $state(0);
   deck = $state([]);
   card = $state(null);
   turnLog = $state([]); // { word, result: 'found' | 'taboo' | 'skip' }
@@ -66,7 +68,7 @@ class Tabou {
     return this.teamNames.map((n, i) => n.trim() || `Équipe ${i + 1}`);
   }
   get teamIndex() {
-    return this.turnIndex % 2;
+    return (this.firstTeam + this.turnIndex) % 2;
   }
   get currentTeam() {
     return this.displayNames[this.teamIndex];
@@ -90,6 +92,7 @@ class Tabou {
     saveSettings(STORAGE_KEY, { turnSeconds: this.turnSeconds, turnsPerTeam: this.turnsPerTeam, mode: this.mode });
     this.scores = [0, 0];
     this.turnIndex = 0;
+    this.firstTeam = randomIndex(2);
     this.deck = buildDeck(this.themeId);
     this.turnLog = [];
     this.phase = 'ready';

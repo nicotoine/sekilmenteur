@@ -67,6 +67,16 @@ describe('distribution', () => {
 });
 
 describe('déroulé', () => {
+  it('tire au sort le premier à parler', () => {
+    const firsts = new Set();
+    for (let i = 0; i < 60; i++) {
+      game.start();
+      game.beginTalk();
+      firsts.add(game.speakerOrder[0].name);
+    }
+    expect(firsts.size).toBe(game.players.length);
+  });
+
   it('les civils gagnent quand tous les intrus sont éliminés', () => {
     game.start();
     game.accuse(alive('undercover'));

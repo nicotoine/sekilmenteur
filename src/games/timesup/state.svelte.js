@@ -1,6 +1,6 @@
 import { bankThemes, pickWords } from '../../lib/wordBank.js';
 import { ALL_THEMES, validMode } from '../../lib/themeUtil.js';
-import { shuffle } from '../../lib/shuffle.js';
+import { randomIndex, shuffle } from '../../lib/shuffle.js';
 import { loadSettings, saveSettings } from '../../lib/storage.js';
 
 const STORAGE_KEY = 'timesup:settings';
@@ -83,7 +83,7 @@ class TimesUp {
     this.pile = shuffle(this.cards);
     this.scores = [this.rounds.map(() => 0), this.rounds.map(() => 0)];
     this.round = 1;
-    this.teamIndex = 0;
+    this.teamIndex = randomIndex(2);
     this.carryover = 0;
     this.roundOver = false;
     this.phase = 'ready';

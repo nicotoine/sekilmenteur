@@ -1,3 +1,5 @@
+export const randomIndex = (length) => Math.floor(Math.random() * length);
+
 export function shuffle(list) {
   const copy = [...list];
   for (let i = copy.length - 1; i > 0; i--) {
