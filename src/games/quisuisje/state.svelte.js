@@ -5,7 +5,7 @@ import { randomIndex } from '../../lib/shuffle.js';
 import { loadSettings, saveSettings } from '../../lib/storage.js';
 
 const STORAGE_KEY = 'quisuisje:settings';
-const PERSON_THEME_IDS = ['celebrites', 'manga', 'pop-culture', 'films', 'series', 'dessins-animes', 'jeux-video', 'animaux', 'metiers', 'sport', 'histoire', 'superheros'];
+const PERSON_THEME_IDS = ['celebrites', 'manga', 'pop-culture', 'films', 'series', 'dessins-animes', 'jeux-video', 'animaux', 'metiers', 'sport', 'histoire', 'superheros', 'disney', 'geek'];
 const DECK_SIZE = 200;
 
 export const themes = bankThemes.filter((t) => PERSON_THEME_IDS.includes(t.id));

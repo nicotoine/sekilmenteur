@@ -44,6 +44,13 @@ describe('banque de thèmes commune', () => {
     expect(liarThemes.some((t) => t.adult)).toBe(true);
   });
 
+  it.each(shared.map((t) => [t.theme.id, t.theme]))('%s : chaque mot sert à tous les jeux (indice, et interdits hors thème adulte)', (_id, theme) => {
+    for (const entry of theme.words) {
+      expect(entry.hint, entry.word).toBeTruthy();
+      if (!theme.adult) expect(entry.forbidden, entry.word).toHaveLength(5);
+    }
+  });
+
   it.each(shared.map((t) => [t.theme.id, t.theme]))('%s : mots uniques, indices et interdits valides', (_id, theme) => {
     for (const entry of theme.words) {
       expect(entry.word.trim()).not.toBe('');
