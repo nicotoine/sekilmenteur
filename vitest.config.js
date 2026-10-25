@@ -8,5 +8,7 @@ export default defineConfig({
     environment: 'jsdom',
     include: ['tests/**/*.test.js'],
     setupFiles: ['./tests/setup.js'],
+    // Node 25+ expose un localStorage natif inutilisable qui masque celui de jsdom
+    execArgv: ['--no-experimental-webstorage'],
   },
 });
